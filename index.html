@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<!--i808developer-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" 
+    <title>ZERO TRUST // 3D ARCHIVES</title>
+    <style>
+        /* --- VARIABLES & THEME --- */
+        :root {
+            --terminal-green: #00ff41;
+            --terminal-green-dim: rgba(0, 255, 65, 0.2);
+            --cobalt-blue: #3b82f6;
+            --alert-red: #ef4444;
+            --warning-yellow: #eab308;
+            --bg-black: #020202;
+            --bg-panel: rgba(5, 5, 10, 0.6);
+            --glass-border: rgba(0, 255, 65, 0.3);
+            /* System Monospace Font Stack (No external fonts) */
+            --font-mono: 'Courier New', Courier, 'Lucida Sans Typewriter', 'Lucida Console', monospace;
+        }
+
+        /* --- RESET & BASE --- */
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-black);
+            color: #e0e0e0;
+            font-family: var(--font-mono);
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+            perspective: 1200px; /* Crucial for the 3D HUD effect */
+            text-align: center;
+        }
+
+        ::selection {
+            background: #003300;
+            color: var(--terminal-green);
+        }
+
+        /* --- NATIVE HTML5 3D CANVAS BACKGROUND --- */
+        #bg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at center, #0a110a 0%, #000000 100%);
+        }
+
+        /* --- HUD CONTAINER (The Hologram) --- */
+        #hud-container {
+            position: absolute;
+            top: 5%;
+            left: 5%;
+            width: 90%;
+            height: 90%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+            pointer-events: none; /* Let background take raw mouse, enable pointer on children */
+        }
+
+        /* Re-enable pointer events for interactive HUD elements */
+        #hud-container > * {
+            pointer-events: auto;
+        }
+
+        /* --- LAYOUT UTILITIES --- */
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .flex-1 { flex: 1; }
+        .w-full { width: 100%; }
+        .h-full { height: 100%; }
+        .relative { position: relative; }
+        .absolute { position: absolute; }
+        .hidden { display: none !important; }
+        .overflow-hidden { overflow: hidden; }
+        .overflow-y-auto { overflow-y: auto; }
+
+        /* Spacing */
+        .p-4 { padding: 1rem; }
+        .p-6 { padding: 1.5rem; }
+        .p-10 { padding: 2.5rem; }
+        .mb-1 { margin-bottom: 0.25rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-auto { margin-top: auto; }
+        .ml-4 { margin-left: 1rem; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .gap-6 { gap: 1.5rem; }
+
+        /* --- TYPOGRAPHY --- */
+        h1, h2, h3 { margin: 0; font-weight: bold; text-shadow: 0 0 16px currentColor; }
+        .text-2xl { font-size: 1.69rem; }
+        .text-3xl { font-size: 1.96rem; }
+        .text-xl { font-size: 1.42rem; }
+        .text-lg { font-size: 1.25rem; }
+        .text-sm { font-size: 1rem; }
+        .text-xs { font-size: 0.75rem; }
+        .font-bold { font-weight: bolder; }
+        .uppercase { text-transform: uppercase; }
+        .tracking-widest { letter-spacing: 0.1em; }
+        
+        /* Text Colors */
+        .text-green { color: var(--terminal-green); }
+        .text-green-dark { color: #15803d; }
+        .text-blue { color: var(--cobalt-blue); }
+        .text-red { color: var(--alert-red); }
+        .text-yellow { color: var(--warning-yellow); }
+        .text-white { color: #ffffff; text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+        .text-gray-300 { color: #d1d5db; }
+        .text-gray-400 { color: #9ca3af; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-600 { color: #4b5563; }
+
+        /* --- COMPONENTS --- */
+        /* Header */
+        .app-header {
+            height: 4rem;
+            border: 1px solid var(--terminal-green);
+            background-color: rgba(0, 20, 0, 0.4);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            box-shadow: 0 0 15px var(--terminal-green-dim);
+            transform: translateZ(30px); /* 3D pop out */
+        }
+
+        /* App Body Container */
+        .app-body {
+            display: flex;
+            flex: 1;
+            margin-top: 1rem;
+            gap: 1rem;
+            height: calc(100% - 5rem);
+        }
+
+        /* Sidebar */
+        .app-sidebar {
+            width: 15rem;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--terminal-green-dim);
+            display: flex;
+            flex-direction: column;
+            box-shadow: inset 0 0 20px rgba(0,255,0,0.05);
+            transform: translateZ(20px);
+        }
+
+        /* Main Content */
+        .app-content {
+            background-color: transparent;
+            flex: 1;
+            position: relative;
+            overflow-y: auto;
+            transform: translateZ(10px);
+        }
+
+        /* Buttons */
+        button { 
+             width: 100%;
+             text-align: center;
+        }
+        .nav-btn {
+            background: rgba(0, 255, 65, 0.05);
+            color: #888;
+            border: 1px solid rgba(0, 255, 65, 0.2);
+            padding: 1rem;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        .nav-btn:hover {
+            border-color: var(--terminal-green);
+            color: #fff;
+            background: rgba(0, 255, 65, 0.2);
+            transform: translateZ(10px);
+            box-shadow: 0 0 15px var(--terminal-green-dim);
+        }
+
+        .nav-btn.active {
+            background-color: rgba(0, 255, 65, 0.8);
+            color: black;
+            box-shadow: 0 0 20px var(--terminal-green);
+            border-color: var(--terminal-green);
+            text-shadow: none;
+        }
+
+        .nav-btn-terminal { color: #60a5fa; border-color: rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.05);}
+        .nav-btn-terminal:hover { border-color: var(--cobalt-blue); background: rgba(59, 130, 246, 0.2); }
+        .nav-btn-terminal.active { background-color: var(--cobalt-blue); box-shadow: 0 0 20px var(--cobalt-blue); }
+
+        /* Grid System */
+        .grid { display: grid; gap: 1.5rem; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        @media (min-width: 768px) {
+            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+
+        /* Glass Panel */
+        .glass-panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        .glass-panel:hover {
+            transform: translateZ(15px);
+            border-color: var(--terminal-green);
+        }
+
+        /* CRT Scanline Effect (Applied over the whole screen) */
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.15) 50%,
+                rgba(0,0,0,0.15)
+            );
+            background-size: 100% 4px;
+            position: fixed;
+            pointer-events: none;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 50;
+        }
+
+        /* Animations */
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+        .glitch-hover:hover {
+            animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+            color: var(--alert-red);
+            text-shadow: 0 0 10px var(--alert-red);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--terminal-green); }
+            50% { opacity: .5; box-shadow: 0 0 2px var(--terminal-green); }
+        }
+        .animate-pulse { animation: pulse 2s infinite; }
+
+        .status-light {
+            width: 0.75rem; height: 0.75rem;
+            border-radius: 9999px;
+            background-color: var(--terminal-green);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 65, 0.3);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--terminal-green); }
+
+        /* Terminal Input */
+        .terminal-input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-top: 1px solid var(--terminal-green-dim);
+            padding-top: 0.5rem;
+            margin-top: 1rem;
+        }
+        .terminal-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--terminal-green);
+            width: 100%;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            text-shadow: 0 0 5px var(--terminal-green);
+        }
+        
+        footer {
+            margin-top: auto;
+            padding: 10px;
+            color: var(--terminal-green-dark);
+            font-size: 16px;
+            letter-spacing: 0.1em;
+            transform: translateZ(10px);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Native HTML5 Canvas 3D Background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- CRT Overlay -->
+    <div class="scanlines"></div>
+
+    <!-- Holographic HUD -->
+    <div id="hud-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="flex items-center gap-3">
+                <div class="status-light animate-pulse"></div>
+                <h1 class="text-2xl tracking-widest text-green font-bold glitch-hover" style="cursor: pointer;" onclick="resetApp()">ZERO TRUST</h1>
+            </div>
+            <div class="text-xs text-gray-400">
+                SYSTEM STATUS: <span class="text-red font-bold animate-pulse">COMPROMISED</span> // CONNECTION: ENCRYPTED
+            </div>
+            <div class="text-xs text-green font-bold">
+                V.19.0.4.3D [OFFLINE]
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <div class="app-body">
+            
+            <!-- Sidebar Navigation -->
+            <nav class="app-sidebar">
+                <div class="p-4 flex flex-col">
+                    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn active">
+                        <span>Dashboard</span>
+                    </button>
+                    <button onclick="switchTab('story')" id="btn-story" class="nav-btn">
+                        <span>Logs</span>
+                    </button>
+                    <button onclick="switchTab('assets')" id="btn-assets" class="nav-btn">
+                        <span>Assets</span>
+                    </button>
+                    <button onclick="switchTab('terminal')" id="btn-terminal" class="nav-btn nav-btn-terminal">
+                        <span>>_ Terminal</span>
+                    </button>
+                </div>
+                
+                <div class="mt-auto p-4 border-t" style="border-color: rgba(0,255,65,0.2)">
+                    <div class="text-gray-500 mb-1" style="font-size: 10px; letter-spacing: 0.1em;">CURRENT LOCATION</div>
+                    <div class="text-xs text-green font-bold" style="text-shadow: 0 0 5px var(--terminal-green);">GPS Position Hidden</div>
+                </div>
+            </nav>
+
+            <!-- Content Area -->
+            <section class="app-content" id="main-display">
+                
+                <!-- VIEW: DASHBOARD -->
+                <div id="view-dashboard" class="p-6 md:p-10 w-full mx-auto" style="max-width: 72rem;">
+                    <div class="glass-panel p-6 relative overflow-hidden mb-6" style="border-left: 4px solid var(--terminal-green);">
+                        <div class="absolute top-0 right-0 p-2 text-green-dark" style="font-size: 10px; border-left: 1px solid rgba(0,255,65,0.2); border-bottom: 1px solid rgba(0,255,65,0.2);">SYS_MSG_001</div>
+                        <h2 class="text-3xl text-white mb-2 font-bold">WELCOME BACK, <span class="text-blue" style="text-shadow: 0 0 10px var(--cobalt-blue);">ANON</span>.</h2>
+                        <p class="text-gray-300 leading-relaxed typing-effect" id="intro-text" style="max-width: 42rem; font-size: 1rem; text-shadow: 1px 1px 2px black;">
+                            The static is gone. The network is secure. This archive contains the complete logs of the Obsidian Incident and the Chimera Protocol. Review the data. Prepare for the next phase.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <!-- Stat Card 1 -->
+                        <div class="glass-panel p-6" style="border-top: 4px solid var(--alert-red);">
+                            <div class="text-xs text-gray-400 uppercase mb-2 tracking-widest">Threat Level</div>
+                            <div class="text-3xl font-bold text-red" style="text-shadow: 0 0 15px var(--alert-red);">CRITICAL</div>
+                            <div class="text-sm text-gray-300 mt-2">Vector is active.</div>
+                        </div>
+                        <!-- Stat Card 2 -->
+                        <div class="glass-panel p-6" style="border-top: 4px solid var(--cobalt-blue);">
+                            <div class="text-xs text-gray-400 uppercase mb-2 tracking-widest">Network Status</div>
+                            <div class="text-3xl font-bold text-blue" style="text-shadow: 0 0 15px var(--cobalt-blue);">MESH ONLINE</div>
+                            <div class="text-sm text-gray-300 mt-2">Nodes: 44 Active</div>
+                        </div>
+                        <!-- Stat Card 3 -->
+                        <div class="glass-panel p-6" style="border-top: 4px solid var(--terminal-green);">
+                            <div class="text-xs text-gray-400 uppercase mb-2 tracking-widest">Chimera Drive</div>
+                            <div class="text-3xl font-bold text-green" style="text-shadow: 0 0 15px var(--terminal-green);">DECRYPTED</div>
+                            <div class="text-sm text-gray-300 mt-2">Payload: Neutralized</div>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-6" style="border-left: 4px solid var(--warning-yellow);">
+                        <h3 class="text-lg text-yellow mb-4 uppercase tracking-widest" style="text-shadow: 0 0 8px var(--warning-yellow);">Recent Intercepts</h3>
+                        <div class="text-sm text-left">
+                            <div class="flex justify-between pb-3 mb-3" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <span class="text-gray-400 font-bold">SRC: INTEL_NETWORK</span>
+                                <span class="text-green-dark">"Project Ares funding approved..."</span>
+                            </div>
+                            <div class="flex justify-between pb-3 mb-3" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <span class="text-gray-400 font-bold">SRC: VECTOR_SIGNAL</span>
+                                <span class="text-red">"Locate Jones. Priority Alpha."</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400 font-bold">SRC: UNKNOWN</span>
+                                <span class="text-blue">"I have the proof. Meet in VA."</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: STORY LOGS -->
+                <div id="view-story" class="hidden p-6 md:p-10 w-full mx-auto text-left" style="max-width: 56rem;">
+                    <h2 class="text-3xl text-green mb-8 pb-2 font-bold" style="border-bottom: 1px solid rgba(0,255,65,0.3); text-shadow: 0 0 10px var(--terminal-green);">MISSION LOGS</h2>
+                    
+                    <div class="relative ml-4 space-y-12" style="border-left: 2px solid rgba(0,255,65,0.4);">
+                        <!-- Log 1 -->
+                        <div class="relative pl-8 glass-panel p-6 ml-6 mb-8" style="border-left: 4px solid var(--terminal-green);">
+                            <div class="absolute top-1/2 -translate-y-1/2 rounded-full" style="left: -43px; width: 20px; height: 20px; background: var(--bg-black); border: 3px solid var(--terminal-green); box-shadow: 0 0 10px var(--terminal-green);"></div>
+                            <h3 class="text-2xl font-bold text-white mb-1">ACT I: THE SANDBOX</h3>
+                            <div class="text-xs text-green mb-4 tracking-widest">FILE: ZERO_TRUST_ORIGIN</div>
+                            <p class="text-gray-300 leading-relaxed text-base">
+                                Robert Jones, isolated and paranoid, is recruited by Obsidian Analytics. Placed in a high-tech "Sandbox," he uncovers patterns in gambling data that link to cartel money laundering. He discovers his presumed-dead partner, Switch, is alive and imprisoned within the building's server core (Cell 04).
+                            </p>
+                        </div>
+
+                        <!-- Log 2 -->
+                        <div class="relative pl-8 glass-panel p-6 ml-6 mb-8" style="border-left: 4px solid var(--cobalt-blue);">
+                            <div class="absolute top-1/2 -translate-y-1/2 rounded-full" style="left: -43px; width: 20px; height: 20px; background: var(--bg-black); border: 3px solid var(--cobalt-blue); box-shadow: 0 0 10px var(--cobalt-blue);"></div>
+                            <h3 class="text-2xl font-bold text-white mb-1">ACT II: THE ESCAPE</h3>
+                            <div class="text-xs text-blue mb-4 tracking-widest">FILE: PROTOCOL_7_FAIL</div>
+                            <p class="text-gray-300 leading-relaxed text-base">
+                                Robert triggers an improvisational fire to escape the Clean Room. With the help of handler Elena Vance—who defects upon learning of the "Liquidation" order—Robert rescues Switch from the basement. They escape via the cooling outflow pipes into the harbor, stealing the "Chimera Drive."
+                            </p>
+                        </div>
+
+                        <!-- Log 3 -->
+                        <div class="relative pl-8 glass-panel p-6 ml-6" style="border-left: 4px solid var(--alert-red);">
+                            <div class="absolute top-1/2 -translate-y-1/2 rounded-full" style="left: -43px; width: 20px; height: 20px; background: var(--bg-black); border: 3px solid var(--alert-red); box-shadow: 0 0 10px var(--alert-red);"></div>
+                            <h3 class="text-2xl font-bold text-white mb-1">ACT III: CHIMERA</h3>
+                            <div class="text-xs text-red mb-4 tracking-widest">FILE: BOSTON_INTERCEPT</div>
+                            <p class="text-gray-300 leading-relaxed text-base">
+                                Hunted by the operative "Vector," the team travels to Boston to find Dr. Aris Thorne. They infiltrate his home to secure a DNA sample to unlock the drive. Thorne sacrifices himself. Robert modifies the bioweapon data to target the users instead of victims and leaks the conspiracy to the world.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: ASSETS -->
+                <div id="view-assets" class="hidden p-6 md:p-10 w-full mx-auto text-left" style="max-width: 72rem;">
+                    <div class="grid grid-cols-1 md:grid-cols-2 md:grid-cols-3 gap-8">
+                        
+                        <!-- Robert -->
+                        <div class="glass-panel p-0 overflow-hidden" style="border-top: 4px solid var(--cobalt-blue);">
+                            <div class="p-4 flex justify-between items-center" style="background: rgba(59, 130, 246, 0.2); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <h3 class="font-bold text-xl text-white">JONES, ROBERT</h3>
+                                <span class="text-xs bg-blue-600 text-white px-2 py-1 rounded tracking-widest font-bold shadow-md" style="background: var(--cobalt-blue);">ARCHITECT</span>
+                            </div>
+                            <div class="p-5 space-y-4 text-sm">
+                                <div class="grid grid-cols-2 gap-3 border-b border-gray-700 pb-4">
+                                    <div class="text-gray-400 font-bold">Status:</div>
+                                    <div class="text-green font-bold text-right" style="text-shadow: 0 0 5px var(--terminal-green);">ACTIVE</div>
+                                    <div class="text-gray-400 font-bold">Specialty:</div>
+                                    <div class="text-gray-200 text-right">Pattern Rec.</div>
+                                    <div class="text-gray-400 font-bold">Affiliation:</div>
+                                    <div class="text-gray-200 text-right">Cobalt Group</div>
+                                </div>
+                                <p class="text-sm text-gray-300 leading-relaxed">
+                                    Former paranoid recluse. Master of "analog hacking." Unlocked the Ghost Key. Currently leading operations in Iceland.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Switch -->
+                        <div class="glass-panel p-0 overflow-hidden" style="border-top: 4px solid var(--terminal-green);">
+                            <div class="p-4 flex justify-between items-center" style="background: rgba(0, 255, 65, 0.15); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <h3 class="font-bold text-xl text-white">SWITCH</h3>
+                                <span class="text-xs text-black px-2 py-1 rounded tracking-widest font-bold shadow-md" style="background: var(--terminal-green);">OPERATOR</span>
+                            </div>
+                            <div class="p-5 space-y-4 text-sm">
+                                <div class="grid grid-cols-2 gap-3 border-b border-gray-700 pb-4">
+                                    <div class="text-gray-400 font-bold">Status:</div>
+                                    <div class="text-green font-bold text-right" style="text-shadow: 0 0 5px var(--terminal-green);">ACTIVE</div>
+                                    <div class="text-gray-400 font-bold">Condition:</div>
+                                    <div class="text-yellow text-right">Amputee (L-Leg)</div>
+                                    <div class="text-gray-400 font-bold">Location:</div>
+                                    <div class="text-gray-200 text-right">The Chair</div>
+                                </div>
+                                <p class="text-sm text-gray-300 leading-relaxed">
+                                    Co-creator of Ghost Key. Presumed dead for 3 years. Expert in network infiltration and mesh topology.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Elena -->
+                        <div class="glass-panel p-0 overflow-hidden" style="border-top: 4px solid var(--warning-yellow);">
+                            <div class="p-4 flex justify-between items-center" style="background: rgba(234, 179, 8, 0.15); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <h3 class="font-bold text-xl text-white">VANCE, ELENA</h3>
+                                <span class="text-xs text-black px-2 py-1 rounded tracking-widest font-bold shadow-md" style="background: var(--warning-yellow);">HANDLER</span>
+                            </div>
+                            <div class="p-5 space-y-4 text-sm">
+                                <div class="grid grid-cols-2 gap-3 border-b border-gray-700 pb-4">
+                                    <div class="text-gray-400 font-bold">Status:</div>
+                                    <div class="text-green font-bold text-right" style="text-shadow: 0 0 5px var(--terminal-green);">ACTIVE</div>
+                                    <div class="text-gray-400 font-bold">Skillset:</div>
+                                    <div class="text-gray-200 text-right">Tactical/Intel</div>
+                                    <div class="text-gray-400 font-bold">Former ID:</div>
+                                    <div class="text-gray-200 text-right">Obsidian Sec.</div>
+                                </div>
+                                <p class="text-sm text-gray-300 leading-relaxed">
+                                    Defected from Obsidian. Provides physical security and logistics. The pragmatic anchor of the team.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Vector -->
+                        <div class="glass-panel p-0 overflow-hidden" style="border-top: 4px solid var(--alert-red); opacity: 0.85;">
+                            <div class="p-4 flex justify-between items-center" style="background: rgba(239, 68, 68, 0.15); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <h3 class="font-bold text-xl text-white">VECTOR</h3>
+                                <span class="text-xs text-white px-2 py-1 rounded tracking-widest font-bold shadow-md" style="background: var(--alert-red);">NEMESIS</span>
+                            </div>
+                            <div class="p-5 space-y-4 text-sm">
+                                <div class="grid grid-cols-2 gap-3 border-b border-gray-700 pb-4">
+                                    <div class="text-gray-400 font-bold">Status:</div>
+                                    <div class="text-red font-bold text-right" style="text-shadow: 0 0 5px var(--alert-red);">UNKNOWN</div>
+                                    <div class="text-gray-400 font-bold">Affiliation:</div>
+                                    <div class="text-gray-200 text-right">Deep State</div>
+                                </div>
+                                <p class="text-sm text-gray-300 leading-relaxed">
+                                    Specialized clean-up operative. Ruthless efficiency. Currently tasked with "Damage Control" for Project Ares.
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- VIEW: TERMINAL -->
+                <div id="view-terminal" class="hidden h-full flex flex-col p-6 md:p-10 text-left">
+                    <div class="glass-panel flex-1 p-6 font-mono text-base overflow-y-auto" style="border: 1px solid var(--terminal-green); box-shadow: inset 0 0 30px rgba(0,255,65,0.1);" id="terminal-output">
+                        <div class="text-green font-bold mb-4" style="text-shadow: 0 0 8px var(--terminal-green);">OBSIDIAN ANALYTICS [SECURE SHELL] // 3D INTERFACE ACTIVE</div>
+                        <div class="text-blue font-bold mb-4 border-b border-gray-700 pb-2" style="text-shadow: 0 0 5px var(--cobalt-blue);">GHOST KEY AI LINK ESTABLISHED.</div>
+                        <div class="text-gray-400 mb-6">Enter encryption key, query, or command...</div>
+                        <div class="text-white">Type '<span class="text-yellow">help</span>' for available commands.</div>
+                    </div>
+                    <div class="terminal-input-group glass-panel p-4 mt-4" style="border: 1px solid var(--terminal-green-dim);">
+                        <span class="text-green font-bold text-xl">></span>
+                        <input type="text" id="terminal-input" class="terminal-input text-lg" placeholder="ENTER COMMAND..." autocomplete="off">
+                    </div>
+                </div>
+
+            </section>
+        </div>
+        
+        <footer>
+            <h4>&copy; 2026 i808developer // ENCRYPTED CONNECTION</h4>
+        </footer>
+    </div>
+
+    <!-- Application Logic & Custom Native HTML5 3D Engine -->
+    <script>
+        /* --- CUSTOM VANILLA JS 3D PARTICLE ENGINE --- */
+        // Replaces Three.js for a zero-dependency offline experience
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let cx, cy;
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            cx = width / 2;
+            cy = height / 2;
+        }
+        
+        window.addEventListener('resize', resize);
+        resize();
+
+        // 3D Engine configuration
+        const fov = 350;        // Field of view
+        const nodeCount = 200;  // Number of particles
+        const range = 800;      // Spawn range
+        const connectionDistance = 150; // Max distance to draw lines
+
+        const nodes = [];
+
+        // Node class representing an X,Y,Z coordinate in space
+        class Node {
+            constructor() {
+                this.x = (Math.random() - 0.5) * range;
+                this.y = (Math.random() - 0.5) * range;
+                this.z = (Math.random() - 0.5) * range;
+                // Velocity
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = (Math.random() - 0.5) * 1.5;
+                this.vz = (Math.random() - 0.5) * 1.5;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.z += this.vz;
+
+                // Bounce off boundaries
+                if (this.x < -range/2 || this.x > range/2) this.vx *= -1;
+                if (this.y < -range/2 || this.y > range/2) this.vy *= -1;
+                if (this.z < -range/2 || this.z > range/2) this.vz *= -1;
+            }
+        }
+
+        // Initialize nodes
+        for (let i = 0; i < nodeCount; i++) {
+            nodes.push(new Node());
+        }
+
+        // Global rotation angles
+        let angleX = 0;
+        let angleY = 0;
+
+        function animate3D() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Update rotation over time
+            angleY += 0.002;
+            angleX += 0.001;
+
+            const cosY = Math.cos(angleY);
+            const sinY = Math.sin(angleY);
+            const cosX = Math.cos(angleX);
+            const sinX = Math.sin(angleX);
+
+            const projectedNodes = [];
+
+            // Update and project nodes
+            for (let i = 0; i < nodeCount; i++) {
+                const node = nodes[i];
+                node.update();
+
+                // 1. Rotate around Y axis
+                let r1x = node.x * cosY - node.z * sinY;
+                let r1z = node.z * cosY + node.x * sinY;
+                let r1y = node.y;
+
+                // 2. Rotate around X axis
+                let r2y = r1y * cosX - r1z * sinX;
+                let r2z = r1z * cosX + r1y * sinX;
+                let r2x = r1x;
+
+                // Move scene away from camera
+                r2z += 500; 
+
+                // Don't render if behind camera
+                if (r2z > 0) { 
+                    const scale = fov / r2z;
+                    const px = r2x * scale + cx;
+                    const py = r2y * scale + cy;
+                    
+                    projectedNodes.push({
+                        orig: node, 
+                        px: px, 
+                        py: py, 
+                        scale: scale, 
+                        r2x: r2x, r2y: r2y, r2z: r2z
+                    });
+                }
+            }
+
+            // Draw Lines (Connections)
+            for (let i = 0; i < projectedNodes.length; i++) {
+                const p1 = projectedNodes[i];
+                for (let j = i + 1; j < projectedNodes.length; j++) {
+                    const p2 = projectedNodes[j];
+                    
+                    // Check distance in 3D space
+                    const dx = p1.orig.x - p2.orig.x;
+                    const dy = p1.orig.y - p2.orig.y;
+                    const dz = p1.orig.z - p2.orig.z;
+                    const distSq = dx*dx + dy*dy + dz*dz;
+
+                    if (distSq < connectionDistance * connectionDistance) {
+                        const dist = Math.sqrt(distSq);
+                        // Opacity based on distance and depth
+                        const alpha = (1 - (dist / connectionDistance)) * Math.min(1, p1.scale);
+                        ctx.beginPath();
+                        ctx.moveTo(p1.px, p1.py);
+                        ctx.lineTo(p2.px, p2.py);
+                        ctx.strokeStyle = `rgba(59, 130, 246, ${alpha * 0.5})`; // Cobalt blue lines
+                        ctx.lineWidth = p1.scale * 1.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw Nodes
+            for (let i = 0; i < projectedNodes.length; i++) {
+                const p = projectedNodes[i];
+                const radius = Math.max(0.5, p.scale * 3);
+                
+                // Opacity based on depth
+                const alpha = Math.min(1, p.scale * 1.5);
+                
+                ctx.beginPath();
+                ctx.arc(p.px, p.py, radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 255, 65, ${alpha})`; // Terminal green nodes
+                ctx.fill();
+                
+                // Core glow effect
+                ctx.shadowBlur = 10 * p.scale;
+                ctx.shadowColor = '#00ff41';
+            }
+
+            requestAnimationFrame(animate3D);
+        }
+
+        // Start the offline 3D engine
+        animate3D();
+
+
+        /* --- 3D CSS PARALLAX HUD EFFECT --- */
+        /*
+        const hud = document.getElementById('hud-container');
+        document.addEventListener('mousemove', (e) => {
+            // Calculate mouse position relative to center of screen
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 40; 
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 40; 
+            // Apply 3D rotation to the HUD
+            hud.style.transform = `rotateY(${xAxis}deg) rotateX(${-yAxis}deg)`;
+        });
+*/
+
+        /* --- UI APPLICATION LOGIC --- */
+        let currentTab = 'dashboard';
+        const terminalOutput = document.getElementById('terminal-output');
+        const terminalInput = document.getElementById('terminal-input');
+
+        let chatHistory = [];
+        let isProcessing = false;
+
+        // Initial Typewriter Effect
+        const introText = document.getElementById('intro-text').innerText;
+        document.getElementById('intro-text').innerText = '';
+        let typeIndex = 0;
+        function typeWriter() {
+            if (typeIndex < introText.length) {
+                document.getElementById('intro-text').innerHTML += introText.charAt(typeIndex);
+                typeIndex++;
+                setTimeout(typeWriter, 15);
+            }
+        }
+        setTimeout(typeWriter, 800);
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            ['dashboard', 'story', 'assets', 'terminal'].forEach(id => {
+                document.getElementById(`view-${id}`).classList.add('hidden');
+                document.getElementById(`btn-${id}`).classList.remove('active');
+            });
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            document.getElementById(`btn-${tabId}`).classList.add('active');
+            
+            currentTab = tabId;
+
+            if (tabId === 'terminal') {
+                setTimeout(() => {
+                    if(!isProcessing) terminalInput.focus();
+                }, 100);
+            }
+        }
+
+        // Terminal Logic
+        terminalInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                if (isProcessing) return; // Prevent input while awaiting AI response
+                const command = this.value.trim(); // Keep original casing for AI context
+                if(command !== "") processCommand(command);
+                this.value = '';
+            }
+        });
+
+        function printToTerminal(text, color = 'text-green') {
+            const div = document.createElement('div');
+            div.className = `${color} mb-2`;
+            div.innerHTML = text;
+            div.style.textShadow = '0 0 5px currentColor';
+            terminalOutput.appendChild(div);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+
+        async function processCommand(rawCmd) {
+            const cmd = rawCmd.toLowerCase();
+            printToTerminal(`> ${rawCmd.toUpperCase()}`, 'text-gray-500');
+
+            switch(cmd) {
+                case 'help':
+                    printToTerminal("AVAILABLE COMMANDS:");
+                    printToTerminal("- STATUS");
+                    printToTerminal("- CLEAR");
+                    printToTerminal("- [SECRET KEYWORDS from the story]");
+                    printToTerminal("- OR TYPE ANY QUERY TO CONSULT THE GHOST KEY AI", "text-blue");
+                    break;
+                case 'status':
+                    printToTerminal("SYSTEM: ONLINE");
+                    printToTerminal("ENCRYPTION: GHOST_KEY_V2");
+                    printToTerminal("LOCATION: REYKJAVIK");
+                    printToTerminal("MODE: OFFLINE LOCAL", "text-blue");
+                    break;
+                case 'clear':
+                    terminalOutput.innerHTML = '';
+                    break;
+                case 'cobalt':
+                    printToTerminal("COBALT GROUP FOUND.", "text-blue font-bold");
+                    printToTerminal("MEMBERS: JONES, SWITCH.");
+                    printToTerminal("STATUS: LEGENDS.");
+                    break;
+                case 'switch':
+                    printToTerminal("ACCESSING CELL 04 RECORDS...");
+                    printToTerminal("ERROR: DATA CORRUPTED BY FIRE.");
+                    printToTerminal("NOTE: 'The landing is rough.'", "text-yellow");
+                    break;
+                case 'chimera':
+                    printToTerminal("WARNING: CLASSIFIED MATERIAL.", "text-red font-bold");
+                    printToTerminal("PROJECT CHIMERA: TARGETED DNA EDITING.");
+                    printToTerminal("CURRENT STATUS: NEUTRALIZED.");
+                    break;
+                case '72':
+                case 'thermostat':
+                    printToTerminal("Temperature set to 72°F.");
+                    printToTerminal("Graphite Bridge Detected.");
+                    printToTerminal("Message Received: I AM IN THE WALLS.", "text-green font-bold");
+                    break;
+                case 'obsidian':
+                    printToTerminal("OBSIDIAN ANALYTICS");
+                    printToTerminal("STATUS: BANKRUPT.");
+                    printToTerminal("NOTE: 'We watch you sleep.'", "text-gray-300");
+                    break;
+                case 'ghost key':
+                case 'ghost_key':
+                    printToTerminal("INITIATING HANDSHAKE...", "text-blue");
+                    printToTerminal("BIOMETRIC SCAN REQUIRED.", "text-red");
+                    printToTerminal("...ACCESS GRANTED via Override.", "text-green font-bold");
+                    printToTerminal("The ledger is open, Robert.");
+                    break;
+                case 'ares':
+                    printToTerminal("PROJECT ARES DETECTED.", "text-red font-bold text-lg");
+                    printToTerminal("PREDICTIVE BEHAVIORAL AI.");
+                    printToTerminal("Next Target: UNKNOWN.");
+                    break;
+                default:
+                    // Route unknown commands to the Gemini LLM
+                    await callGeminiAPI(rawCmd);
+            }
+        }
+
+        async function callGeminiAPI(userText) {
+            isProcessing = true;
+            terminalInput.disabled = true;
+            terminalInput.placeholder = "AWAITING NEURAL LINK...";
+
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const systemPrompt = "You are the 'Ghost Key', a clandestine AI system built by the Cobalt Group (Robert Jones and Switch). You exist within the Zero Trust archives. Respond in a terse, cryptic, cyberpunk, terminal-style tone. Keep responses under 2 paragraphs. You know the lore: Robert Jones, Elena Vance, and Switch defeated Obsidian Analytics and stopped Project Chimera, but are now hunting Project Ares (Predictive Behavioral AI). Treat the user as a trusted operative logging into the system.";
+
+            chatHistory.push({ role: "user", parts: [{ text: userText }] });
+
+            const payload = {
+                contents: chatHistory,
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            };
+
+            const loadingId = "loading-" + Date.now();
+            const div = document.createElement('div');
+            div.id = loadingId;
+            div.className = "text-yellow animate-pulse mb-2";
+            div.style.textShadow = '0 0 5px currentColor';
+            div.innerHTML = "ESTABLISHING NEURAL LINK...";
+            terminalOutput.appendChild(div);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const loader = document.getElementById(loadingId);
+                if(loader) loader.remove();
+
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (text) {
+                    chatHistory.push({ role: "model", parts: [{ text: text }] });
+                    // Format response for HTML display
+                    const formattedText = text.replace(/\n/g, '<br>');
+                    printToTerminal(formattedText, 'text-gray-300');
+                } else {
+                    printToTerminal("ERROR: INVALID RESPONSE FROM NEURAL NET.", 'text-red');
+                }
+            } catch (e) {
+                const loader = document.getElementById(loadingId);
+                if(loader) loader.remove();
+                printToTerminal("ERROR: CONNECTION TO GHOST KEY INTERRUPTED.", 'text-red');
+            }
+
+            isProcessing = false;
+            terminalInput.disabled = false;
+            terminalInput.placeholder = "ENTER COMMAND...";
+            terminalInput.focus();
+        }
+
+        function resetApp() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>
