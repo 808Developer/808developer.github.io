@@ -1,1 +1,3 @@
 # 808developer.github.io
+
+This is an evolving index of simple stuff being created to prove some concepts and have some fun building...
