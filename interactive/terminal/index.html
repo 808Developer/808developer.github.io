@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <!-- Copyright (c) 2026 - i808developer -->
+    <!-- ALL RIGHTS RESERVED -->
+<head>    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" description="i808developer">
+    <title>Terminal3D</title>
+    <link rel="icon" href="favicon.ico" type="x-icon" />
+
+<style>
+        /* --- VARIABLES & THEME --- */
+        :root {
+            --terminal-green: #00ff42;
+            --terminal-green-dim: rgba(0, 255, 0, 0.2);
+            --cobalt-blue: #3b82f6;
+            --alert-red: #ef4444;
+            --warning-yellow: #eab308;
+            --bg-black: #000000;
+            --bg-panel: rgba(5, 5, 10, 0.6);
+            --glass-border: rgba(0, 255, 65, 0.3);
+            /* System Monospace Font Stack (No external fonts) */
+            --font-mono: 'Courier New', Courier, 'Lucida Sans Typewriter', 'Lucida Console', monospace;
+        }
+
+        /* --- RESET & BASE --- */
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-black);
+            color: #FF0000;
+            font-family: var(--font-mono);
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+	/* Crucial for the 3D effect */
+            perspective: 1200px; 
+            text-align: center;
+        }
+
+        /* Text Colors */
+        .text-green { color: var(--terminal-green); }
+        .text-green-dark { color: #15803d; }
+        .text-blue { color: var(--cobalt-blue); }
+        .text-red { color: var(--alert-red); }
+        .text-yellow { color: var(--warning-yellow); }
+        .text-white { color: #ffffff; text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+        .text-gray-300 { color: #d1d5db; }
+        .text-gray-400 { color: #9ca3af; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-600 { color: #4b5563; }
+
+        /* Glass Panel */
+        .glass-panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        .glass-panel:hover {
+            transform: translateZ(15px);
+            border-color: var(--terminal-green);
+        }
+
+        /* CRT Scanline Effect (Applied over the whole screen) */
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.15) 50%,
+                rgba(0,0,0,0.15)
+            );
+            background-size: 100% 4px;
+            position: fixed;
+            pointer-events: none;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 50;
+        }
+
+        /* Animations */
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .glitch-hover:hover {
+            animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+            color: var(--alert-red);
+            text-shadow: 0 0 10px var(--alert-red);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--terminal-green); }
+            50% { opacity: .5; box-shadow: 0 0 2px var(--terminal-green); }
+        }
+        .animate-pulse { animation: pulse 2s infinite; }
+
+        .status-light {
+            width: 0.75rem; height: 0.75rem;
+            border-radius: 9999px;
+            background-color: var(--terminal-green);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 65, 0.3);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--terminal-green); }
+
+        /* Terminal Input */
+        .terminal-input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-top: 1px solid var(--terminal-green);
+            padding-top: 0.5rem;
+            margin-top: 1rem;
+        }
+        .terminal-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #00FF00;
+	    font-size: 16px;
+	    font-weight: bolder;
+            width: 100%;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+	#view-dashboard {
+	    width: 100%;
+	    height: 20%;
+	    position: relative;
+	    z-index: 2;
+	    text-align: center;
+	}
+        
+        footer {
+            margin-top: auto;
+            padding: 10px;
+            color: var(--terminal-green-dark);
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            transform: translateZ(10px);
+        }
+</style>
+</head>
+<body>
+
+    <!-- Native HTML5 Canvas 3D Background -->
+    <canvas id="bg-canvas" style="width: 100%; height: 633px;"></canvas>
+
+    <!-- CRT Overlay -->
+    <div class="scanlines"></div>
+        <!-- Main Body -->
+        <div class="app-body">
+
+    <!-- Holographic -->
+    <div id="ud-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="flex items-center gap-3">
+                <div class="status-light animate-pulse"></div>
+                <h1 class="text-2xl tracking-widest text-green font-bold glitch-hover" style="cursor: pointer;" onclick="resetApp()">Terminal3D</h1>
+            </div>
+            <div class="text-xs text-gray-400">
+                SYSTEM STATUS: <span class="text-red font-bold animate-pulse">COMPROMISED</span> // CONNECTION: ENCRYPTED
+            </div>
+            <div class="text-xs text-green font-bold">
+                V.42.1.3D [OFFLINE]
+            </div>
+        </header>
+
+
+
+		<!-- Content Area -->
+            <section class="app-content" id="main-display">
+                
+                <!-- VIEW: DASHBOARD -->
+                <div id="view-dashboard" class="p-6 md:p-10 w-full mx-auto" style="max-width: 100%; marin: 33px;">
+                    <div class="glass-panel p-6 relative overflow-hidden mb-6" style="border-left: 4px solid var(--terminal-green);">
+
+                        <h2 class="text-3xl text-white mb-2 font-bold">WELCOME BACK<span class="text-blue" style="padding: 20px; text-shadow: 0 0 10px var(--cobalt-blue);">Anonymous</span></h2>
+                        <p class="text-gray-300 leading-relaxed typing-effect" 
+id="intro-text" style="padding-left: 330px; padding-right: 330px; min-width: 42rem; font-size: 16px; text-shadow: 1px 1px 2px black;">The network is secure. This archive contains the complete logs archive of the Obsidian Incident and the Chimera Protocol. Now is the time to review the data and prepare for the next phase...
+                        </p>
+                    </div>
+		</div>
+
+
+                <!-- VIEW: TERMINAL -->
+                <div id="view-terminal" class="hidden h-full flex flex-col p-6 md:p-10 text-left">
+                    <div class="glass-panel flex-1 p-6 font-mono text-base overflow-y-auto" style="border: 1px solid var(--terminal-green); box-shadow: inset 0 0 30px rgba(0,255,65,0.1);" id="terminal-output">
+                        <div class="text-green font-bold mb-4" style="text-shadow: 0 0 8px var(--terminal-green);">OBSIDIAN ANALYTICS [SECURE SHELL] // 3D INTERFACE ACTIVE</div>
+                        <div class="text-gray-400 mb-6 border-b border-gray-700 pb-2">Enter encryption key or command...</div>
+                        <div class="text-white">Type '<span class="text-yellow">help</span>' for available commands.</div>
+                    </div>
+                    <div class="terminal-input-group glass-panel p-4 mt-4" style="border: 5px solid transparent; padding: 5px;">
+                        <span class="text-green font-bold text-xl">></span>
+                        <input type="text" id="terminal-input" class="terminal-input" placeholder="ENTER COMMAND..." autocomplete="off">
+                    </div>
+                </div>
+            </section>
+	</div>
+        <footer>
+            <h4><b>&copy; 2026 i808developer </b></h4>
+            <h2>-<u><b>ALL RIGHTS RESERVED</b></u>-</h2>
+        </footer>
+
+<!-- Application Logic & Custom Native HTML5 3D Engine -->
+    <script>
+        /* --- CUSTOM VANILLA JS 3D PARTICLE ENGINE --- */
+        // Replaces Three.js for a zero-dependency offline experience
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let cx, cy;
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            cx = width / 2;
+            cy = height / 2;
+        }
+        
+        window.addEventListener('resize', resize);
+        resize();
+
+        // 3D Engine configuration
+        const fov = 350;        // Field of view
+        const nodeCount = 200;  // Number of particles
+        const range = 800;      // Spawn range
+        const connectionDistance = 150; // Max distance to draw lines
+
+        const nodes = [];
+
+        // Node class representing an X,Y,Z coordinate in space
+        class Node {
+            constructor() {
+                this.x = (Math.random() - 0.5) * range;
+                this.y = (Math.random() - 0.5) * range;
+                this.z = (Math.random() - 0.5) * range;
+                // Velocity
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = (Math.random() - 0.5) * 1.5;
+                this.vz = (Math.random() - 0.5) * 1.5;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.z += this.vz;
+
+                // Bounce off boundaries
+                if (this.x < -range/2 || this.x > range/2) this.vx *= -1;
+                if (this.y < -range/2 || this.y > range/2) this.vy *= -1;
+                if (this.z < -range/2 || this.z > range/2) this.vz *= -1;
+            }
+        }
+
+        // Initialize nodes
+        for (let i = 0; i < nodeCount; i++) {
+            nodes.push(new Node());
+        }
+
+        // Global rotation angles
+        let angleX = 0;
+        let angleY = 0;
+
+        function animate3D() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Update rotation over time
+            angleY += 0.002;
+            angleX += 0.001;
+
+            const cosY = Math.cos(angleY);
+            const sinY = Math.sin(angleY);
+            const cosX = Math.cos(angleX);
+            const sinX = Math.sin(angleX);
+
+            const projectedNodes = [];
+
+            // Update and project nodes
+            for (let i = 0; i < nodeCount; i++) {
+                const node = nodes[i];
+                node.update();
+
+                // 1. Rotate around Y axis
+                let r1x = node.x * cosY - node.z * sinY;
+                let r1z = node.z * cosY + node.x * sinY;
+                let r1y = node.y;
+
+                // 2. Rotate around X axis
+                let r2y = r1y * cosX - r1z * sinX;
+                let r2z = r1z * cosX + r1y * sinX;
+                let r2x = r1x;
+
+                // Move scene away from camera
+                r2z += 500; 
+
+                // Don't render if behind camera
+                if (r2z > 0) { 
+                    const scale = fov / r2z;
+                    const px = r2x * scale + cx;
+                    const py = r2y * scale + cy;
+                    
+                    projectedNodes.push({
+                        orig: node, 
+                        px: px, 
+                        py: py, 
+                        scale: scale, 
+                        r2x: r2x, r2y: r2y, r2z: r2z
+                    });
+                }
+            }
+
+            // Draw Lines (Connections)
+            for (let i = 0; i < projectedNodes.length; i++) {
+                const p1 = projectedNodes[i];
+                for (let j = i + 1; j < projectedNodes.length; j++) {
+                    const p2 = projectedNodes[j];
+                    
+                    // Check distance in 3D space
+                    const dx = p1.orig.x - p2.orig.x;
+                    const dy = p1.orig.y - p2.orig.y;
+                    const dz = p1.orig.z - p2.orig.z;
+                    const distSq = dx*dx + dy*dy + dz*dz;
+
+                    if (distSq < connectionDistance * connectionDistance) {
+                        const dist = Math.sqrt(distSq);
+                        // Opacity based on distance and depth
+                        const alpha = (1 - (dist / connectionDistance)) * Math.min(1, p1.scale);
+                        ctx.beginPath();
+                        ctx.moveTo(p1.px, p1.py);
+                        ctx.lineTo(p2.px, p2.py);
+                        ctx.strokeStyle = `rgba(59, 130, 246, ${alpha * 0.5})`; // Cobalt blue lines
+                        ctx.lineWidth = p1.scale * 1.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw Nodes
+            for (let i = 0; i < projectedNodes.length; i++) {
+                const p = projectedNodes[i];
+                const radius = Math.max(0.5, p.scale * 3);
+                
+                // Opacity based on depth
+                const alpha = Math.min(1, p.scale * 1.5);
+                
+                ctx.beginPath();
+                ctx.arc(p.px, p.py, radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 255, 65, ${alpha})`; // Terminal green nodes
+                ctx.fill();
+                
+                // Core glow effect
+                ctx.shadowBlur = 10 * p.scale;
+                ctx.shadowColor = '#00ff41';
+            }
+
+            requestAnimationFrame(animate3D);
+        }
+
+        // Start the offline 3D engine
+        animate3D();
+
+
+        /* --- 3D CSS PARALLAX EFFECT --- */
+/*        const ud = document.getElementById('ud-container');
+        document.addEventListener('mousemove', (e) => {
+            // Calculate mouse position relative to center of screen
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 40; 
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 40; 
+            // Apply 3D rotation
+            ud.style.transform = `rotateY(${xAxis}deg) rotateX(${-yAxis}deg)`;
+        });
+*/
+
+        /* --- UI APPLICATION LOGIC --- */
+        let currentTab = 'dashboard';
+        const terminalOutput = document.getElementById('terminal-output');
+        const terminalInput = document.getElementById('terminal-input');
+
+        // Initial Typewriter Effect
+        const introText = document.getElementById('intro-text').innerText;
+        document.getElementById('intro-text').innerText = '';
+        let typeIndex = 0;
+        function typeWriter() {
+            if (typeIndex < introText.length) {
+                document.getElementById('intro-text').innerHTML += introText.charAt(typeIndex);
+                typeIndex++;
+                setTimeout(typeWriter, 15);
+            }
+        }
+        setTimeout(typeWriter, 800);
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            ['dashboard', 'story', 'assets', 'terminal'].forEach(id => {
+                document.getElementById(`view-${id}`).classList.add('hidden');
+                document.getElementById(`btn-${id}`).classList.remove('active');
+            });
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            document.getElementById(`btn-${tabId}`).classList.add('active');
+            
+            currentTab = tabId;
+
+            if (tabId === 'terminal') {
+                setTimeout(() => terminalInput.focus(), 100);
+            }
+        }
+
+        // Terminal Logic
+        terminalInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const command = this.value.trim().toLowerCase();
+                if(command !== "") processCommand(command);
+                this.value = '';
+            }
+        });
+
+        function printToTerminal(text, color = 'text-green') {
+            const div = document.createElement('div');
+            div.className = `${color} mb-2`;
+            div.innerHTML = text;
+            div.style.textShadow = '0 0 5px currentColor';
+            terminalOutput.appendChild(div);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+
+        function processCommand(cmd) {
+            printToTerminal(`> ${cmd.toUpperCase()}`, 'text-gray-500');
+
+            switch(cmd) {
+                case 'help':
+                    printToTerminal("AVAILABLE COMMANDS:");
+                    printToTerminal("- STATUS");
+                    printToTerminal("- CLEAR");
+                    printToTerminal("- [SECRET KEYWORDS from the story]");
+                    break;
+                case 'status':
+                    printToTerminal("SYSTEM: ONLINE");
+                    printToTerminal("ENCRYPTION: GHOST_KEY_V2");
+                    printToTerminal("LOCATION: REYKJAVIK");
+                    printToTerminal("MODE: OFFLINE LOCAL", "text-blue");
+                    break;
+                case 'clear':
+                    terminalOutput.innerHTML = '';
+                    break;
+                case 'cobalt':
+                    printToTerminal("COBALT GROUP FOUND.", "text-blue font-bold");
+                    printToTerminal("MEMBERS: JONES, SWITCH.");
+                    printToTerminal("STATUS: LEGENDS.");
+                    break;
+                case 'switch':
+                    printToTerminal("ACCESSING CELL 04 RECORDS...");
+                    printToTerminal("ERROR: DATA CORRUPTED BY FIRE.");
+                    printToTerminal("NOTE: 'The landing is rough.'", "text-yellow");
+                    break;
+                case 'chimera':
+                    printToTerminal("WARNING: CLASSIFIED MATERIAL.", "text-red font-bold");
+                    printToTerminal("PROJECT CHIMERA: TARGETED DNA EDITING.");
+                    printToTerminal("CURRENT STATUS: NEUTRALIZED.");
+                    break;
+                case '72':
+                case 'thermostat':
+                    printToTerminal("Temperature set to 72°F.");
+                    printToTerminal("Graphite Bridge Detected.");
+                    printToTerminal("Message Received: I AM IN THE WALLS.", "text-green font-bold");
+                    break;
+                case 'obsidian':
+                    printToTerminal("OBSIDIAN ANALYTICS");
+                    printToTerminal("STATUS: BANKRUPT.");
+                    printToTerminal("NOTE: 'We watch you sleep.'", "text-gray-300");
+                    break;
+                case 'ghost key':
+                case 'ghost_key':
+                    printToTerminal("INITIATING HANDSHAKE...", "text-blue");
+                    printToTerminal("BIOMETRIC SCAN REQUIRED.", "text-red");
+                    printToTerminal("...ACCESS GRANTED via Override.", "text-green font-bold");
+                    printToTerminal("The ledger is open, Robert.");
+                    break;
+                case 'ares':
+                    printToTerminal("PROJECT ARES DETECTED.", "text-red font-bold text-lg");
+                    printToTerminal("PREDICTIVE BEHAVIORAL AI.");
+                    printToTerminal("Next Target: UNKNOWN.");
+                    break;
+		case 'test':
+                    printToTerminal("DENIED! The time for testing has expired. ");
+		break;
+                default:
+                    printToTerminal(`COMMAND '${cmd}' NOT RECOGNIZED.`, 'text-red');
+            }
+        }
+
+        function resetApp() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>
