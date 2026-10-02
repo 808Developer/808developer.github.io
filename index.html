@@ -1,31 +1,28 @@
 <!DOCTYPE html>
+<!--Copyright (c) 2026 - i808developer-->
+<!--ALL RIGHTS RESERVED-->
 <html lang="en-US">
-    <!-- Copyright (c) 2026 - i808developer -->
-    <!-- ALL RIGHTS RESERVED -->
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="author" content="i808developer games">
-    <title>RetroShooter</title>
-    <link rel="icon" href="favicon.ico" type="x-icon" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Spider 3D</title>
     <style>
-        /* CSS Theme and Reset */
         :root {
-            --neon-cyan: #00f3ff;
-            --neon-pink: #ff007f;
-            --neon-purple: #7000ff;
-            --bg-dark: #050515;
-            --text-light: #f8fafc;
-            --slate-400: #94a3b8;
-            --slate-700: #334155;
-            --slate-800: #1e293b;
-            --slate-900: #0f172a;
-            --slate-950: #020617;
-            --sans-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --bg-dark: #0b0c10;
+            --panel-bg: rgba(15, 23, 42, 0.82);
+            --panel-border: rgba(255, 255, 255, 0.12);
+            --accent-red: #ef4444;
+            --accent-red-hover: #dc2626;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
         }
 
         * {
             box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
             margin: 0;
             padding: 0;
         }
@@ -35,2344 +32,2265 @@
             height: 100%;
             overflow: hidden;
             background-color: var(--bg-dark);
-            font-family: var(--sans-font);
-            color: var(--text-light);
-            user-select: none;
-            -webkit-user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-main);
         }
 
-        /* Scanlines Retro Overlay */
-        .scanlines {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(
-                rgba(18, 16, 16, 0) 50%, 
-                rgba(0, 0, 0, 0.2) 50%
-            );
-            background-size: 100% 4px;
-            z-index: 40;
-            pointer-events: none;
-        }
-
-        /* Master Layout Container */
         #game-container {
             position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #000000 0%, #000 0%);
         }
 
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
+        canvas#glcanvas {
             display: block;
-        }
-
-        #ui-overlay {
-            position: relative;
             width: 100%;
             height: 100%;
-            z-index: 10;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 16px;
+            touch-action: none;
+            cursor: grab;
         }
 
-        /* Enable pointer events selectively on UI controls */
-        .interactive {
-            pointer-events: auto;
+        canvas#glcanvas:active {
+            cursor: grabbing;
         }
 
-        /* Headers & Panels */
-        .hud-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            width: 100%;
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+            border-radius: 16px;
         }
 
-        .hud-panel {
-            background-color: rgba(2, 6, 23, 0.85);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(0, 243, 255, 0.25);
+        .spider-glow {
+            filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.85));
+        }
+
+        .icon-btn {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            color: var(--text-muted);
             border-radius: 12px;
-            padding: 12px 16px;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            padding: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        .hud-panel.pink {
-            border-color: rgba(255, 0, 127, 0.25);
-            box-shadow: 0 0 15px rgba(255, 0, 127, 0.15);
+        .icon-btn:hover {
+            color: #fff;
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(255, 255, 255, 0.25);
         }
 
-        .hud-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--slate-400);
+        .btn-primary {
+            background: var(--accent-red);
+            color: #fff;
+            border: none;
+            padding: 7px 16px;
+            font-size: 12px;
             font-weight: 700;
-        }
-
-        .hud-value-cyan {
-            font-size: 24px;
-            font-weight: 900;
-            color: #fff;
-            text-shadow: 0 0 8px var(--neon-cyan);
-            font-family: monospace;
-        }
-
-        .hud-value-pink {
-            font-size: 24px;
-            font-weight: 900;
-            color: #fff;
-            text-shadow: 0 0 8px var(--neon-pink);
-            font-family: monospace;
-            display: flex;
+            border-radius: 10px;
+            cursor: pointer;
+            display: inline-flex;
             align-items: center;
             gap: 6px;
-        }
-
-        .shield-container {
-            width: 120px;
-            background-color: var(--slate-800);
-            height: 8px;
-            border-radius: 9999px;
-            overflow: hidden;
-            border: 1px solid var(--slate-700);
-            margin-top: 4px;
-        }
-
-        .shield-bar {
-            height: 100%;
-            width: 100%;
-            background: linear-gradient(90deg, var(--neon-cyan), #3b82f6);
-            transition: width 0.1s ease;
-        }
-
-        /* Title Design */
-        .title-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-
-        @media (max-width: 640px) {
-            .title-container {
-                display: none;
-            }
-        }
-
-        .retro-title {
-            font-size: 28px;
-            font-weight: 900;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            background: linear-gradient(90deg, var(--neon-pink), var(--neon-purple), var(--neon-cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 8px rgba(255, 0, 127, 0.5));
-        }
-
-        .multiplier-badge {
-            font-size: 11px;
-            color: #facc15;
-            font-weight: 800;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            margin-top: 4px;
-            animation: pulse-glow 1.5s infinite;
-        }
-
-        @keyframes pulse-glow {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 1; filter: drop-shadow(0 0 4px #facc15); }
-        }
-
-        /* Center Panels (Menu structure) */
-        #center-menus {
-            align-self: center;
-            max-width: 420px;
-            width: 100%;
-            margin: auto;
-            z-index: 20;
-        }
-
-        .menu-card {
-            background-color: rgba(2, 6, 23, 0.92);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 16px;
-            padding: 24px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            border: 1px solid var(--neon-pink);
-            box-shadow: 0 0 25px rgba(255, 0, 127, 0.25);
-        }
-
-        .menu-card.cyan {
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 25px rgba(0, 243, 255, 0.25);
-        }
-
-        .menu-card.gray {
-            border-color: var(--slate-700);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-
-        .menu-heading {
-            font-size: 32px;
-            font-weight: 900;
-            letter-spacing: 0.1em;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            text-shadow: 0 0 10px var(--neon-pink);
-        }
-
-        .menu-heading.cyan-text {
-            text-shadow: 0 0 10px var(--neon-cyan);
-            color: var(--neon-cyan);
-        }
-
-        .menu-desc {
-            font-size: 14px;
-            color: var(--slate-400);
-            margin-bottom: 24px;
-            line-height: 1.5;
-        }
-
-        /* Buttons & Actions */
-        .btn-launch {
-            width: 100%;
-            background: linear-gradient(90deg, var(--neon-pink), var(--neon-purple), var(--neon-cyan));
-            border: none;
-            color: white;
-            font-weight: 800;
-            padding: 14px;
-            font-size: 16px;
-            border-radius: 12px;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
             transition: all 0.2s ease;
-            box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4);
-            margin-bottom: 12px;
         }
 
-        .btn-launch:hover {
-            transform: scale(1.03);
-            filter: brightness(1.1);
-        }
-
-        .btn-launch:active {
-            transform: scale(0.97);
-        }
-
-        .btn-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            width: 100%;
+        .btn-primary:hover {
+            background: var(--accent-red-hover);
+            transform: translateY(-1px);
         }
 
         .btn-secondary {
-            background-color: var(--slate-900);
-            border: 1px solid var(--slate-700);
-            color: white;
-            font-weight: 700;
-            padding: 10px;
-            font-size: 13px;
-            border-radius: 8px;
+            background: #1e293b;
+            color: var(--text-main);
+            border: 1px solid #334155;
+            padding: 7px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 10px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: background 0.2s;
-        }
-
-        .btn-secondary:hover {
-            background-color: var(--slate-800);
-            border-color: var(--slate-400);
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        /* Shop System Styles */
-        .shop-header {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            border-bottom: 1px dashed var(--slate-800);
-            padding-bottom: 8px;
-        }
-
-        .shop-crystal-badge {
-            background-color: var(--slate-900);
-            border: 1px solid var(--neon-pink);
-            border-radius: 999px;
-            padding: 4px 12px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-weight: 700;
-            font-size: 14px;
+            transition: all 0.2s ease;
         }
 
-        .shop-list {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-height: 240px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-            padding-right: 4px;
+        .btn-secondary:hover:not(:disabled) {
+            background: #334155;
+            color: #fff;
         }
 
-        /* Custom Scrollbar for Shop */
-        .shop-list::-webkit-scrollbar {
-            width: 4px;
-        }
-        .shop-list::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2);
-        }
-        .shop-list::-webkit-scrollbar-thumb {
-            background: var(--neon-pink);
-            border-radius: 2px;
-        }
-
-        .shop-item {
-            background-color: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--slate-800);
-            border-radius: 8px;
-            padding: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            text-align: left;
-        }
-
-        .shop-item-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .shop-item-title {
-            font-size: 13px;
-            font-weight: 800;
-            letter-spacing: 0.05em;
-        }
-
-        .shop-item-desc {
-            font-size: 10px;
-            color: var(--slate-400);
-        }
-
-        .shop-pips {
-            display: flex;
-            gap: 3px;
-            margin-top: 4px;
-        }
-
-        .pip {
-            width: 6px;
-            height: 6px;
-            border-radius: 9999px;
-            background-color: var(--slate-800);
-            border: 1px solid var(--slate-700);
-        }
-
-        .pip.active {
-            background-color: var(--neon-cyan);
-            border-color: #3b82f6;
-            box-shadow: 0 0 4px var(--neon-cyan);
-        }
-
-        .btn-upgrade {
-            background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
-            color: white;
-            font-size: 11px;
-            font-weight: 800;
-            padding: 6px 12px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 75px;
-        }
-
-        .btn-upgrade:disabled {
-            background: var(--slate-800);
-            color: var(--slate-400);
+        .btn-secondary:disabled {
+            opacity: 0.35;
             cursor: not-allowed;
-            border: 1px solid var(--slate-700);
         }
 
-        .btn-upgrade span:last-child {
-            font-size: 8px;
-            opacity: 0.8;
-            margin-top: 2px;
+        select.ui-select {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 12px;
+            outline: none;
+            cursor: pointer;
         }
 
-        /* Settings Toggle Row */
-        .settings-row {
-            width: 100%;
+        select.ui-select:focus {
+            border-color: var(--accent-red);
+        }
+
+        .clock-box {
+            font-variant-numeric: tabular-nums;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            padding: 6px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clock-box.active {
+            border-color: var(--accent-emerald);
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
+            transform: scale(1.02);
+            background: rgba(16, 185, 129, 0.15);
+        }
+
+        .clock-box.danger {
+            border-color: var(--accent-red);
+            color: #f87171;
+            animation: pulse-danger 1s infinite alternate;
+        }
+
+        @keyframes pulse-danger {
+            from { box-shadow: 0 0 4px rgba(239, 68, 68, 0.4); }
+            to { box-shadow: 0 0 18px rgba(239, 68, 68, 0.9); }
+        }
+
+        /* Header Layout */
+        .app-header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 16px;
+            pointer-events: none;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--slate-800);
+            z-index: 10;
         }
 
-        .settings-info {
-            text-align: left;
+        .header-brand {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            pointer-events: auto;
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
-        .settings-label {
-            font-weight: 700;
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: auto;
+        }
+
+        .side-ud {
+            position: absolute;
+            left: 16px;
+            top: 90px;
+            bottom: 90px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+            width: 180px;
+            z-index: 10;
+        }
+
+        .player-card {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: auto;
+        }
+
+        .captured-tray {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            min-height: 20px;
             font-size: 14px;
         }
 
-        .settings-sub {
-            font-size: 10px;
-            color: var(--slate-400);
-        }
-
-        /* Switch Style toggle */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
+        /* Footer Bar */
+        .app-footer {
             position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: var(--slate-800);
-            transition: .3s;
-            border-radius: 24px;
-            border: 1px solid var(--slate-700);
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .3s;
-            border-radius: 50%;
-        }
-
-        input:checked + .slider {
-            background-color: var(--neon-pink);
-            border-color: var(--neon-pink);
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(20px);
-        }
-
-        /* Difficulty selection row */
-        .diff-selector {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            width: 100%;
-            margin-top: 8px;
-        }
-
-        .diff-btn {
-            background-color: var(--slate-900);
-            border: 1px solid var(--slate-800);
-            color: var(--slate-400);
-            padding: 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .diff-btn.active {
-            background-color: var(--neon-cyan);
-            border-color: var(--neon-cyan);
-            color: var(--slate-950);
-            font-weight: 800;
-        }
-
-        /* Footer Controls and Layout */
-        .footer-row {
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            width: 100%;
+            gap: 12px;
+            pointer-events: none;
+            z-index: 10;
+            flex-wrap: wrap;
         }
 
-        .help-panel {
-            background-color: rgba(2, 6, 23, 0.85);
-            border: 1px solid var(--slate-800);
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 11px;
-            color: var(--slate-400);
-            max-width: 250px;
-        }
-
-        @media (max-width: 640px) {
-            .help-panel {
-                display: none;
-            }
-        }
-
-        .help-title {
-            color: var(--neon-cyan);
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-
-        .control-key {
-            background-color: var(--slate-800);
-            border: 1px solid var(--slate-700);
-            border-radius: 4px;
-            padding: 1px 4px;
-            color: white;
-            font-family: monospace;
-        }
-
-        /* Mobile inputs */
-        .mobile-controls {
-            display: none;
-            gap: 16px;
-            width: 100%;
-            justify-content: space-between;
-        }
-
-        @media (max-width: 640px) {
-            .mobile-controls {
-                display: flex;
-            }
-        }
-
-        .touch-btn {
-            width: 60px;
-            height: 60px;
-            background-color: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(0, 243, 255, 0.3);
-            border-radius: 12px;
+        .cam-controls {
+            padding: 6px;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            cursor: pointer;
-            touch-action: none;
-            transition: all 0.1s;
+            gap: 4px;
+            pointer-events: auto;
         }
 
-        .touch-btn:active {
-            background-color: rgba(0, 243, 255, 0.3);
-            transform: scale(0.95);
-        }
-
-        .touch-btn.shoot {
-            width: 72px;
-            border-color: rgba(255, 0, 127, 0.4);
-            background: linear-gradient(135deg, rgba(255,0,127,0.2), rgba(112,0,255,0.2));
-        }
-
-        .touch-btn.shoot:active {
-            background: rgba(255, 0, 127, 0.4);
-        }
-
-        .action-btns {
-            display: flex;
-            gap: 10px;
-        }
-
-        .action-btn {
-            background-color: var(--slate-900);
-            border: 1px solid var(--slate-800);
-            color: var(--slate-400);
-            padding: 10px;
+        .cam-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
             border-radius: 8px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             transition: all 0.2s;
         }
 
-        .action-btn:hover {
-            color: white;
-            border-color: var(--slate-400);
+        .cam-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
         }
 
-        /* Stat Grid Card on Game Over */
-        .stat-grid {
+        .control-dock {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            pointer-events: auto;
+        }
+
+        /* Modals and Overlays */
+        .modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+            pointer-events: auto;
+        }
+
+        .modal-backdrop.show {
+            display: flex;
+        }
+
+        .modal-window {
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            animation: popIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.9) translateY(12px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .promo-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            width: 100%;
-            background-color: var(--slate-950);
-            border: 1px solid var(--slate-800);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 16px;
         }
 
-        .stat-card {
+        .promo-option {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 6px;
+            cursor: pointer;
+            color: #f59e0b;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
         }
 
-        .stat-val {
-            font-size: 20px;
+        .promo-option:hover {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: var(--accent-red);
+            transform: translateY(-2px);
+        }
+
+        .promo-label {
+            font-size: 11px;
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+
+        .ai-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--accent-amber);
+            font-weight: 500;
+            padding: 6px 12px;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .ai-spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--accent-amber);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Mobile Compact Status & Clock Bar */
+        .mobile-ud {
+            display: none;
+            position: absolute;
+            top: 68px;
+            left: 12px;
+            right: 12px;
+            padding: 6px 12px;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            font-size: 12px;
+            pointer-events: auto;
+        }
+
+        .mobile-ud-player {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mobile-clock {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 14px;
             font-weight: 800;
-            font-family: monospace;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* SVG icon layout styling */
-        .icon {
-            display: inline-block;
-            width: 1em;
-            height: 1em;
-            stroke-width: 0;
-            stroke: currentColor;
-            fill: currentColor;
+        .mobile-clock.active {
+            border-color: var(--accent-emerald);
+            color: #34d399;
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        .mobile-clock.danger {
+            border-color: var(--accent-red);
+            color: #f87171;
+            animation: pulse-danger 1s infinite alternate;
+        }
+
+        @media (max-width: 768px) {
+            .side-ud { display: none; }
+            .mobile-ud { display: flex; }
+
+            
+            .app-header {
+                padding: 10px 12px;
+            }
+            .header-brand {
+                padding: 6px 10px;
+                gap: 8px;
+            }
+            .header-brand h1 {
+                font-size: 14px !important;
+            }
+            #sub-status {
+                display: none;
+            }
+            .app-footer {
+                bottom: 8px;
+                left: 8px;
+                right: 8px;
+                flex-direction: column-reverse;
+                align-items: stretch;
+                gap: 6px;
+            }
+            .cam-controls {
+                justify-content: center;
+                background: rgba(15, 23, 42, 0.88);
+                display: none;
+            }
+            .control-dock {
+                justify-content: space-between;
+                padding: 6px 10px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                gap: 8px;
+            }
+            .control-dock::-webkit-scrollbar {
+                display: none;
+            }
+            .btn-primary, .btn-secondary, select.ui-select {
+                min-height: 36px;
+                font-size: 11px;
+                padding: 6px 10px;
+            }
+            .modal-window {
+                padding: 18px 14px;
+                max-width: 92vw;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="scanlines"></div>
+<div id="game-container">
+    <canvas id="glcanvas"></canvas>
 
-    <div id="game-container">
-        <!-- RENDER CANVAS -->
-        <canvas id="canvas-3d"></canvas>
-
-        <!-- HUD & SCREENS OVERLAY -->
-        <div id="ui-overlay">
-            
-            <!-- TOP STATS HEADER -->
-            <div class="hud-row">
-                <!-- Left panel: Scores -->
-                <div class="hud-panel interactive">
-                    <span class="hud-label">Score</span>
-                    <span id="hud-score" class="hud-value-cyan">00000</span>
-                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
-                        <span class="hud-label" style="font-size: 10px;">Best:</span>
-                        <span id="hud-highscore" style="font-family: monospace; font-size: 11px; font-weight: 700; color: var(--slate-400);">00000</span>
-                    </div>
-                </div>
-
-                <!-- Mid text (Dumb terminals only) -->
-                <div class="title-container">
-                    <h1 class="retro-title">RetroShooter</h1>
-                    <span id="hud-multiplier" class="multiplier-badge">x1.0 Cruise</span>
-                </div>
-
-                <!-- Right panel: Resources -->
-                <div class="hud-panel pink interactive">
-                    <div class="hud-value-pink">
-                        <span id="hud-crystals">0</span>
-                        <!-- SVG Gem icon -->
-                        <svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--neon-pink);"><path d="M6 3h12l4 6-10 13L2 9z"></path><path d="M11 3 8 9l4 13 4-13-3-6"></path><path d="M2 9h20"></path></svg>
-                    </div>
-                    <!-- Shield bar -->
-                    <div class="shield-container">
-                        <div id="hud-shield" class="shield-bar"></div>
-                    </div>
-                    <span class="hud-label" style="text-align: right; font-size: 9px; margin-top: 2px;">Shield Health</span>
-                </div>
-            </div>
-
-            <!-- CENTER COMPONENT MENUS (Start, Garage, Game Over, Settings) -->
-            <div id="center-menus" class="interactive">
-                
-                <!-- START MENU -->
-                <div id="start-menu" class="menu-card">
-                    <h2 class="menu-heading" style="color: white;">RetroShooter</h2>
-                    <p class="menu-desc">Navigate dynamic neon lanes, blast barrier cubes, and collect energy cores in a retro software-projected 3D wireframe horizon.</p>
-                    
-                    <button id="btn-play" class="btn-launch">Launch Game</button>
-
-                    <div class="btn-grid">
-                        <button id="btn-garage" class="btn-secondary">
-                            <!-- SVG Garage Hangar icon -->
-                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: var(--neon-pink);"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                            Upgrades Garage
-                        </button>
-                        <button id="btn-settings" class="btn-secondary">
-                            <!-- SVG Settings sliders icon -->
-                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: var(--neon-cyan);"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-                            Preferences
-                        </button>
-                    </div>
-                </div>
-
-                <!-- UPGRADE GARAGE -->
-                <div id="garage-menu" class="menu-card cyan hidden">
-                    <div class="shop-header">
-                        <h2 class="menu-heading cyan-text" style="font-size: 24px; margin: 0;">Upgrade Garage</h2>
-                        <div class="shop-crystal-badge">
-                            <span id="shop-crystal-count">0</span>
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--neon-pink);"><path d="M6 3h12l4 6-10 13L2 9z"></path></svg>
-                        </div>
-                    </div>
-
-                    <div class="shop-list">
-                        <!-- Upgrade Item 1: Thrusters -->
-                        <div class="shop-item">
-                            <div class="shop-item-info">
-                                <span class="shop-item-title">ION THRUSTERS</span>
-                                <span class="shop-item-desc">Increases hyper-jump engine speeds.</span>
-                                <div id="engine-lvl-dots" class="shop-pips">
-                                    <div class="pip active"></div>
-                                    <div class="pip"></div>
-                                    <div class="pip"></div>
-                                    <div class="pip"></div>
-                                    <div class="pip"></div>
-                                </div>
-                            </div>
-                            <button id="buy-engine" class="btn-upgrade">
-                                <span>UPGRADE</span>
-                                <span><svg viewBox="0 0 24 24" width="8" height="8" fill="none" stroke="currentColor" style="display:inline; vertical-align:middle; margin-right:2px;"><path d="M6 3h12l4 6-10 13L2 9z"></path></svg> <span id="engine-cost">20</span></span>
-                            </button>
-                        </div>
-
-                        <!-- Upgrade Item 2: Deflectors -->
-                        <div class="shop-item">
-                            <div class="shop-item-info">
-                                <span class="shop-item-title">SHIELD GENERATOR</span>
-                                <span class="shop-item-desc">Absorbs incoming structural hazards.</span>
-                                <div id="shield-lvl-dots" class="shop-pips">
-                                    <div class="pip active"></div>
-                                    <div class="pip"></div>
-                                    <div class="pip"></div>
-                                    <div class="pip"></div>
-                                    <div class="pip"></div>
-                                </div>
-                            </div>
-                            <button id="buy-shield" class="btn-upgrade">
-                                <span>UPGRADE</span>
-                                <span><svg viewBox="0 0 24 24" width="8" height="8" fill="none" stroke="currentColor" style="display:inline; vertical-align:middle; margin-right:2px;"><path d="M6 3h12l4 6-10 13L2 9z"></path></svg> <span id="shield-cost">20</span></span>
-                            </button>
-                        </div>
-
-                        <!-- Upgrade Item 3: Lasers -->
-                        <div class="shop-item">
-                            <div class="shop-item-info">
-                                <span class="shop-item-title">PLASMA CANNONS</span>
-                                <span class="shop-item-desc">Expands blaster spread config.</span>
-                                <div id="weapon-lvl-dots" class="shop-pips">
-                                    <div class="pip active"></div>
-                                    <div class="pip"></div>
-                                    <div class="pip"></div>
-                                    <div class="pip"></div>
-                                    <div class="pip"></div>
-                                </div>
-                            </div>
-                            <button id="buy-weapon" class="btn-upgrade">
-                                <span>UPGRADE</span>
-                                <span><svg viewBox="0 0 24 24" width="8" height="8" fill="none" stroke="currentColor" style="display:inline; vertical-align:middle; margin-right:2px;"><path d="M6 3h12l4 6-10 13L2 9z"></path></svg> <span id="weapon-cost">20</span></span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <button id="btn-close-garage" class="btn-launch" style="padding: 10px; font-size: 13px; background: var(--slate-900); border: 1px solid var(--slate-700); box-shadow: none;">Back to System</button>
-                </div>
-
-                <!-- GAME OVER CARD -->
-                <div id="gameover-menu" class="menu-card hidden">
-                    <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="#ef4444" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                    </div>
-                    <h2 class="menu-heading" style="color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.6); font-size: 26px;">Aircraft Terminated</h2>
-                    <p class="menu-desc" style="margin-bottom: 16px;">Hull integrity fully exhausted. Core engines offline.</p>
-
-                    <!-- Game stats summary -->
-                    <div class="stat-grid">
-                        <div class="stat-card">
-                            <span class="hud-label">Run Score</span>
-                            <span id="go-score" class="stat-val" style="color: white;">0</span>
-                        </div>
-                        <div class="stat-card">
-                            <span class="hud-label">Saves Total</span>
-                            <span id="go-crystals" class="stat-val" style="color: var(--neon-pink); display: flex; align-items: center; justify-content: center; gap: 4px;">0 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l4 6-10 13L2 9z"></path></svg></span>
-                        </div>
-                    </div>
-
-                    <button id="btn-restart" class="btn-launch" style="background: linear-gradient(90deg, #3b82f6, var(--neon-cyan)); box-shadow: 0 4px 15px rgba(0, 243, 255, 0.4);">Continue?</button>
-                    <button id="btn-go-hangar" class="btn-launch" style="background: var(--slate-900); border: 1px solid var(--slate-700); box-shadow: none; font-size: 13px; padding: 10px;">Upgrades Garage</button>
-                </div>
-
-                <!-- PREFERENCES / SETTINGS MENU -->
-                <div id="settings-menu" class="menu-card gray hidden">
-                    <h2 class="menu-heading cyan-text" style="font-size: 24px; margin-bottom: 16px;">PREFERENCES</h2>
-
-                    <!-- Sound synthesis Toggle -->
-                    <div class="settings-row">
-                        <div class="settings-info">
-                            <div class="settings-label">Synthwave Audio</div>
-                            <div class="settings-sub">Auto-synthesize soundtrack and FX</div>
-                        </div>
-                        <label class="switch">
-                            <input id="setting-audio" type="checkbox" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <!-- Dynamic tracking Toggle -->
-                    <div class="settings-row">
-                        <div class="settings-info">
-                            <div class="settings-label">Dynamic Horizon</div>
-                            <div class="settings-sub">Tilted camera perspective on turns</div>
-                        </div>
-                        <label class="switch">
-                            <input id="setting-cam" type="checkbox" checked>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <!-- Difficulty Toggle -->
-                    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: none; margin-bottom: 16px;">
-                        <div class="settings-info">
-                            <div class="settings-label">Engine Warp Class</div>
-                            <div class="settings-sub">Regulates standard travel speed increments</div>
-                        </div>
-                        <div class="diff-selector">
-                            <button id="diff-0" class="diff-btn">Cruise</button>
-                            <button id="diff-1" class="diff-btn active">Hyper</button>
-                            <button id="diff-2" class="diff-btn">Overdrive</button>
-                        </div>
-                    </div>
-
-                    <button id="btn-close-settings" class="btn-launch" style="padding: 10px; font-size: 13px; background: var(--slate-900); border: 1px solid var(--slate-700); box-shadow: none;">Save and Close</button>
-                </div>
-
-            </div>
-
-            <!-- BOTTOM BAR (Instructions & Audio controls) -->
-            <div class="footer-row">
-                <!-- Help controller panels (Desktops) -->
-                <div class="help-panel interactive">
-                    <div class="help-title">Subsystems Control</div>
-                    <div><span class="control-key">A</span> / <span class="control-key">D</span> or <span class="control-key">←</span> / <span class="control-key">→</span> : Lateral Drift</div>
-                    <div style="margin-top: 4px;"><span class="control-key">Space</span> : Unleash Plasma Blasters</div>
-                </div>
-
-                <!-- Touch overlays (Mobile devices) -->
-                <div class="mobile-controls interactive">
-                    <div style="display: flex; gap: 12px;">
-                        <button id="touch-left" class="touch-btn">
-                            <!-- Left icon -->
-                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                        </button>
-                        <button id="touch-right" class="touch-btn">
-                            <!-- Right icon -->
-                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                        </button>
-                    </div>
-                    <button id="touch-shoot" class="touch-btn shoot">
-                        <!-- Gun / Shoot Crosshair icon -->
-                        <svg viewBox="0 0 24 24" width="26" height="26" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
-                    </button>
-                </div>
+    <!-- Header Navigation & Turn Status -->
+    <header class="app-header">
+        <div class="glass-panel header-brand">
+            <!-- Inline SVG Spider Icon -->
+            <svg class="spider-glow" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                <path d="M12 19a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"/>
+                <path d="M10 6 4 3"/>
+                <path d="M14 6l6-3"/>
+                <path d="M9 12 3 11"/>
+                <path d="M15 12l6-1"/>
+                <path d="M9 16 3 19"/>
+                <path d="M15 16l6 3"/>
+            </svg>
             <div>
-                <footer>
-                    <p style="color: #42424242; font-size: 8px; font-family: Arial; margin-left: -69px;"><b>&copy;2026 i808developer</b></p>
-                </footer>
-            </div >
-                <!-- Audio controls bottom-right -->
-                <div class="action-btns interactive">
-                    <button id="btn-quick-settings" class="action-btn" title="Quick Settings">
-                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
-                    </button>
-                    <button id="btn-sound-toggle" class="action-btn" title="Toggle Synthesizer">
-                        <svg id="sound-icon-svg" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                    </button>
-                </div>
+                <h1 style="font-size: 16px; font-weight: 800; color: #fff; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                    Chess Spider <span style="font-size: 10px; background: rgba(239, 68, 68, 0.3); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); padding: 1px 6px; border-radius: 999px; font-family: monospace;">3D</span>
+                </h1>
+                <p id="sub-status" style="font-size: 11px; color: var(--text-muted);">White's move • Click a piece to play</p>
+            </div>
+        </div>
+
+        <div class="header-controls">
+            <div id="ai-indicator" class="glass-panel ai-indicator">
+                <span class="ai-spinner"></span>
+                <span>AI thinking...</span>
             </div>
 
+            <button id="btn-camera-reset" title="Reset Camera View" class="icon-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                </svg>
+            </button>
+            <button id="btn-sound-toggle" title="Toggle Sound" class="icon-btn">
+                <svg id="sound-icon-on" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                </svg>
+                <svg id="sound-icon-off" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                    <line x1="23" y1="9" x2="17" y2="15"/>
+                    <line x1="17" y1="9" x2="23" y2="15"/>
+                </svg>
+            </button>
+            <button id="btn-info-toggle" title="Help & Camera Guide" class="icon-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Mini Clock & Score ud -->
+    <div id="mobile-ud" class="glass-panel mobile-ud">
+        <div class="mobile-ud-player">
+            <span id="mobile-white-label" style="font-weight: 700; color: #f8fafc;">White</span>
+            <div id="mobile-white-clock" class="mobile-clock active">05:00</div>
+            <span id="mobile-white-score" style="font-size: 11px; color: #10b981; font-weight: bold;"></span>
+        </div>
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-muted);" id="mobile-status-pill">W to move</div>
+        <div class="mobile-ud-player">
+            <span id="mobile-black-score" style="font-size: 11px; color: #c084fc; font-weight: bold;"></span>
+            <div id="mobile-black-clock" class="mobile-clock">05:00</div>
+            <span id="mobile-black-label" style="font-weight: 700; color: #cbd5e1;">Black</span>
         </div>
     </div>
 
-    <!-- MAIN OFFLINE SYSTEM SCRIPTS -->
-    <script>
-        /* Native Audio Synthesizer (Works 100% Offline via Web Audio API) */
-        class RetroAudioSynthesizer {
-            constructor() {
-                this.ctx = null;
-                this.enabled = true;
-                this.beatInterval = null;
-                this.sequenceIndex = 0;
-                // Synthwave bass rhythm midi indices
-                this.bassline = [36, 36, 43, 43, 39, 39, 41, 41];
-                this.tempo = 125;
-            }
+    <!-- Side Player Tags & Captured Trays (Desktop) -->
+    <div class="side-ud">
+        <!-- Black player card -->
+        <div class="glass-panel player-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #cbd5e1; font-weight: 600;">
+                <span id="black-label" style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="10" rx="2"/>
+                        <circle cx="12" cy="5" r="2"/>
+                        <path d="M12 7v4"/>
+                        <line x1="8" y1="16" x2="8" y2="16"/>
+                        <line x1="16" y1="16" x2="16" y2="16"/>
+                    </svg>
+                    Black (Spider AI)
+                </span>
+                <span id="black-score" style="color: #94a3b8; font-weight: 700;">+0</span>
+            </div>
+            <div id="black-captured" class="captured-tray"></div>
+            <div id="black-clock" class="clock-box glass-panel">05:00</div>
+        </div>
 
-            init() {
-                if (this.ctx) return;
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (AudioCtx) {
-                    this.ctx = new AudioCtx();
-                }
-            }
+        <!-- White player card -->
+        <div class="glass-panel player-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #cbd5e1; font-weight: 600;">
+                <span id="white-label" style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    White (Player)
+                </span>
+                <span id="white-score" style="color: #94a3b8; font-weight: 700;">+0</span>
+            </div>
+            <div id="white-captured" class="captured-tray"></div>
+            <div id="white-clock" class="clock-box active glass-panel">05:00</div>
+        </div>
+    </div>
 
-            midiToFreq(note) {
-                return 440 * Math.pow(2, (note - 69) / 12);
-            }
+    <!-- Bottom Controls Footer -->
+    <footer class="app-footer">
+      <h3>&copy;2026 i808developer</h3>
+        <div class="glass-panel cam-controls">
+            <button id="cam-player" class="cam-btn">Player</button>
+            <button id="cam-top" class="cam-btn">Birdseye</button>
+            <button id="cam-side" class="cam-btn">Side</button>
+        </div>
 
-            playShoot() {
-                if (!this.enabled) return;
-                this.init();
-                if (!this.ctx) return;
+        <div class="glass-panel control-dock">
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted);">
+                <span>Side:</span>
+                <select id="player-color" class="ui-select">
+                    <option value="w" selected>Play as White</option>
+                    <option value="b">Play as Black</option>
+                </select>
+            </div>
 
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted);">
+                <span>AI:</span>
+                <select id="difficulty-select" class="ui-select">
+                    <option value="1">Bitty (Easy)</option>
+                    <option value="2">Venom (Normal)</option>
+                    <option value="3" selected>Spider King (Hard)</option>
+                </select>
+            </div>
 
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(750, now);
-                osc.frequency.exponentialRampToValueAtTime(100, now + 0.12);
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted);">
+                <span>Clock:</span>
+                <select id="time-control" class="ui-select">
+                    <option value="0" selected>Casual (No Clock)</option>
+                    <option value="180">3 min Blitz</option>
+                    <option value="300">5 min Rapid</option>
+                    <option value="600">10 min Standard</option>
+                    <option value="1200">20 min Standard</option>
 
-                gain.gain.setValueAtTime(0.12, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                </select>
+            </div>
 
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.13);
-            }
+            <div style="height: 18px; width: 1px; background: rgba(255,255,255,0.15);"></div>
 
-            playExplosion() {
-                if (!this.enabled) return;
-                this.init();
-                if (!this.ctx) return;
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button id="btn-undo" disabled class="btn-secondary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 7v6h6"/>
+                        <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+                    </svg>
+                    Undo
+                </button>
+                <button id="btn-new-game" class="btn-primary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    New Game
+                </button>
+            </div>
+        </div>
+    </footer>
 
-                const now = this.ctx.currentTime;
-                const bufferSize = this.ctx.sampleRate * 0.4;
-                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = Math.random() * 2 - 1;
-                }
+    <!-- Promotion Selection Modal -->
+    <div id="promotion-dialog" class="modal-backdrop">
+        <div class="glass-panel modal-window">
+            <h2 style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 4px;">Promote Pawn</h2>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Choose an ascendance for your pawn:</p>
+            <div class="promo-grid">
+                <button data-piece="q" class="promo-option">
+                    <span style="font-size: 26px;">♛</span>
+                    <span class="promo-label">Queen</span>
+                </button>
+                <button data-piece="r" class="promo-option">
+                    <span style="font-size: 26px;">♜</span>
+                    <span class="promo-label">Rook</span>
+                </button>
+                <button data-piece="b" class="promo-option">
+                    <span style="font-size: 26px;">♝</span>
+                    <span class="promo-label">Bishop</span>
+                </button>
+                <button data-piece="n" class="promo-option">
+                    <span style="font-size: 26px;">♞</span>
+                    <span class="promo-label">Knight</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
-                const noiseSource = this.ctx.createBufferSource();
-                noiseSource.buffer = buffer;
+    <!-- Game Over Modal -->
+    <div id="status-overlay" class="modal-backdrop">
+        <div class="glass-panel modal-window" style="max-width: 440px;">
+            <div style="width: 56px; height: 56px; background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.4); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; color: #ef4444;">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                    <path d="M4 22h16"/>
+                    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                </svg>
+            </div>
+            <h2 id="status-text" style="font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 6px;">Checkmate!</h2>
+            <p id="status-detail" style="font-size: 13px; color: #cbd5e1; margin-bottom: 20px;">White reigns victorious over the arachnid realm.</p>
+            <div style="display: flex; justify-content: center; gap: 10px;">
+                <button id="btn-restart-overlay" class="btn-primary" style="padding: 10px 20px; font-size: 13px;">Play Again</button>
+                <button id="btn-close-overlay" class="btn-secondary" style="padding: 10px 18px; font-size: 13px;">Review Board</button>
+            </div>
+        </div>
+    </div>
 
-                const filter = this.ctx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(250, now);
-                filter.frequency.exponentialRampToValueAtTime(10, now + 0.4);
+    <!-- Instructions Modal -->
+    <div id="info-modal" class="modal-backdrop">
+        <div class="glass-panel modal-window" style="text-align: left; max-width: 440px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                    How to Play & Controls
+                </h3>
+                <button id="btn-close-info" style="background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <ul style="font-size: 12px; color: #cbd5e1; line-height: 1.8; list-style: none; margin-bottom: 20px;">
+                <li style="margin-bottom: 8px;">• <strong>Select & Move:</strong> Click a piece to reveal highlighted valid destination squares, then click a target square to move.</li>
+                <li style="margin-bottom: 8px;">• <strong>Camera Orbit:</strong> Click and drag anywhere across the 3D canvas to rotate 360° around the board.</li>
+                <li style="margin-bottom: 8px;">• <strong>Zoom:</strong> Scroll your mouse wheel or pinch-to-zoom on touch screens.</li>
+                <li style="margin-bottom: 8px;">• <strong>Procedural Spiders:</strong> 12 live arachnids crawl through the chamber, bouncing organically off both the perimeter walls and the chessboard edges.</li>
+                <li>• <strong>100% Offline:</strong> Operates entirely without external internet connections or third-party libraries.</li>
+            </ul>
+            <button id="btn-info-ok" class="btn-primary" style="width: 100%; justify-content: center; padding: 9px 0;">Got it</button>
+        </div>
+    </div>
+</div>
 
-                const gain = this.ctx.createGain();
-                gain.gain.setValueAtTime(0.25, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+<script>
+const Math3D = {
+    mat4: {
+        create: () => new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]),
+        perspective: (out, fovy, aspect, near, far) => {
+            let f = 1.0 / Math.tan(fovy / 2), nf = 1 / (near - far);
+            out[0] = f / aspect; out[1] = 0; out[2] = 0; out[3] = 0;
+            out[4] = 0; out[5] = f; out[6] = 0; out[7] = 0;
+            out[8] = 0; out[9] = 0; out[10] = (far + near) * nf; out[11] = -1;
+            out[12] = 0; out[13] = 0; out[14] = (2 * far * near) * nf; out[15] = 0;
+            return out;
+        },
+        multiply: (out, a, b) => {
+            let a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3],
+                a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7],
+                a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11],
+                a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+            let b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
+            out[0] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+            out[1] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+            out[2] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+            out[3] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+            b0 = b[4]; b1 = b[5]; b2 = b[6]; b3 = b[7];
+            out[4] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+            out[5] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+            out[6] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+            out[7] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+            b0 = b[8]; b1 = b[9]; b2 = b[10]; b3 = b[11];
+            out[8] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+            out[9] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+            out[10] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+            out[11] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+            b0 = b[12]; b1 = b[13]; b2 = b[14]; b3 = b[15];
+            out[12] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+            out[13] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+            out[14] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+            out[15] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+            return out;
+        },
+        translate: (out, a, v) => {
+            let x = v[0], y = v[1], z = v[2];
+            out[12] = a[0] * x + a[4] * y + a[8] * z + a[12];
+            out[13] = a[1] * x + a[5] * y + a[9] * z + a[13];
+            out[14] = a[2] * x + a[6] * y + a[10] * z + a[14];
+            out[15] = a[3] * x + a[7] * y + a[11] * z + a[15];
+            return out;
+        },
+        scale: (out, a, v) => {
+            out[0] = a[0] * v[0]; out[1] = a[1] * v[0]; out[2] = a[2] * v[0]; out[3] = a[3] * v[0];
+            out[4] = a[4] * v[1]; out[5] = a[5] * v[1]; out[6] = a[6] * v[1]; out[7] = a[7] * v[1];
+            out[8] = a[8] * v[2]; out[9] = a[9] * v[2]; out[10] = a[10] * v[2]; out[11] = a[11] * v[2];
+            return out;
+        },
+        rotateX: (out, a, rad) => {
+            let s = Math.sin(rad), c = Math.cos(rad);
+            let a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+            let a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+            out[4] = a10 * c + a20 * s; out[5] = a11 * c + a21 * s; out[6] = a12 * c + a22 * s; out[7] = a13 * c + a23 * s;
+            out[8] = a20 * c - a10 * s; out[9] = a21 * c - a11 * s; out[10] = a22 * c - a12 * s; out[11] = a23 * c - a13 * s;
+            return out;
+        },
+        rotateY: (out, a, rad) => {
+            let s = Math.sin(rad), c = Math.cos(rad);
+            let a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+            let a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+            out[0] = a00 * c - a20 * s; out[1] = a01 * c - a21 * s; out[2] = a02 * c - a22 * s; out[3] = a03 * c - a23 * s;
+            out[8] = a00 * s + a20 * c; out[9] = a01 * s + a21 * c; out[10] = a02 * s + a22 * c; out[11] = a03 * s + a23 * c;
+            return out;
+        },
+        rotateZ: (out, a, rad) => {
+            let s = Math.sin(rad), c = Math.cos(rad);
+            let a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+            let a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+            out[0] = a00 * c + a10 * s; out[1] = a01 * c + a11 * s; out[2] = a02 * c + a12 * s; out[3] = a03 * c + a13 * s;
+            out[4] = a10 * c - a00 * s; out[5] = a11 * c - a01 * s; out[6] = a12 * c - a02 * s; out[7] = a13 * c - a03 * s;
+            return out;
+        },
+        invert: (out, a) => {
+            let a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3], a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+            let a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11], a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+            let b00 = a00*a11 - a01*a10, b01 = a00*a12 - a02*a10, b02 = a00*a13 - a03*a10;
+            let b03 = a01*a12 - a02*a11, b04 = a01*a13 - a03*a11, b05 = a02*a13 - a03*a12;
+            let b06 = a20*a31 - a21*a30, b07 = a20*a32 - a22*a30, b08 = a20*a33 - a23*a30;
+            let b09 = a21*a32 - a22*a31, b10 = a21*a33 - a23*a31, b11 = a22*a33 - a23*a32;
+            let det = b00*b11 - b01*b10 + b02*b09 + b03*b08 - b04*b07 + b05*b06;
+            if (!det) return null;
+            det = 1.0 / det;
+            out[0] = (a11*b11 - a12*b10 + a13*b09)*det;
+            out[1] = (a02*b10 - a01*b11 - a03*b09)*det;
+            out[2] = (a31*b05 - a32*b04 + a33*b03)*det;
+            out[3] = (a22*b04 - a21*b05 - a23*b03)*det;
+            out[4] = (a12*b08 - a10*b11 - a13*b07)*det;
+            out[5] = (a00*b11 - a02*b08 + a03*b07)*det;
+            out[6] = (a32*b02 - a30*b05 - a33*b01)*det;
+            out[7] = (a20*b05 - a22*b02 + a23*b01)*det;
+            out[8] = (a10*b10 - a11*b08 + a13*b06)*det;
+            out[9] = (a01*b08 - a00*b10 - a03*b06)*det;
+            out[10] = (a30*b04 - a31*b02 + a33*b00)*det;
+            out[11] = (a21*b02 - a20*b04 - a23*b00)*det;
+            out[12] = (a11*b07 - a10*b09 - a12*b06)*det;
+            out[13] = (a00*b09 - a01*b07 + a02*b06)*det;
+            out[14] = (a31*b01 - a30*b03 - a32*b00)*det;
+            out[15] = (a20*b03 - a21*b01 + a22*b00)*det;
+            return out;
+        },
+        transpose: (out, a) => {
+            let a01 = a[1], a02 = a[2], a03 = a[3], a12 = a[6], a13 = a[7], a23 = a[11];
+            out[0] = a[0]; out[1] = a[4]; out[2] = a[8]; out[3] = a[12];
+            out[4] = a01; out[5] = a[5]; out[6] = a[9]; out[7] = a[13];
+            out[8] = a02; out[9] = a12; out[10] = a[10]; out[11] = a[14];
+            out[12] = a03; out[13] = a13; out[14] = a23; out[15] = a[15];
+            return out;
+        },
+        lookAt: (out, eye, center, up) => {
+            let eyex = eye[0], eyey = eye[1], eyez = eye[2];
+            let z0 = eyex - center[0], z1 = eyey - center[1], z2 = eyez - center[2];
+            let len = 1 / Math.hypot(z0, z1, z2);
+            z0 *= len; z1 *= len; z2 *= len;
+            let x0 = up[1] * z2 - up[2] * z1, x1 = up[2] * z0 - up[0] * z2, x2 = up[0] * z1 - up[1] * z0;
+            len = Math.hypot(x0, x1, x2);
+            if (!len) { x0 = 0; x1 = 0; x2 = 0; } else { len = 1 / len; x0 *= len; x1 *= len; x2 *= len; }
+            let y0 = z1 * x2 - z2 * x1, y1 = z2 * x0 - z0 * x2, y2 = z0 * x1 - z1 * x0;
+            out[0] = x0; out[1] = y0; out[2] = z0; out[3] = 0;
+            out[4] = x1; out[5] = y1; out[6] = z1; out[7] = 0;
+            out[8] = x2; out[9] = y2; out[10] = z2; out[11] = 0;
+            out[12] = -(x0 * eyex + x1 * eyey + x2 * eyez);
+            out[13] = -(y0 * eyex + y1 * eyey + y2 * eyez);
+            out[14] = -(z0 * eyex + z1 * eyey + z2 * eyez);
+            out[15] = 1;
+            return out;
+        }
+    }
+};
 
-                noiseSource.connect(filter);
-                filter.connect(gain);
-                gain.connect(this.ctx.destination);
+const canvas = document.getElementById('glcanvas');
+const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+if (!gl) {
+    document.body.innerHTML = '<div style="padding: 30px; text-align: center; color: #ef4444;">WebGL 1.0 is required but not supported on this browser.</div>';
+    throw new Error('WebGL unavailable');
+}
 
-                noiseSource.start(now);
-                noiseSource.stop(now + 0.4);
-            }
+const vsSource = `
+    attribute vec4 aVertexPosition;
+    attribute vec3 aVertexNormal;
 
-            playCollect() {
-                if (!this.enabled) return;
-                this.init();
-                if (!this.ctx) return;
+    uniform mat4 uNormalMatrix;
+    uniform mat4 uModelViewMatrix;
+    uniform mat4 uProjectionMatrix;
 
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
+    varying highp vec3 vNormal;
+    varying highp vec3 vEyeVec;
+    varying highp vec3 vFragPos;
 
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, now); // D5
-                osc.frequency.setValueAtTime(880.00, now + 0.06); // A5
+    void main(void) {
+        vec4 mvPosition = uModelViewMatrix * aVertexPosition;
+        gl_Position = uProjectionMatrix * mvPosition;
+        vFragPos = mvPosition.xyz;
+        vEyeVec = -mvPosition.xyz;
+        vNormal = (uNormalMatrix * vec4(aVertexNormal, 0.0)).xyz;
+    }
+`;
 
-                gain.gain.setValueAtTime(0.15, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+const fsSource = `
+    precision highp float;
+    varying highp vec3 vNormal;
+    varying highp vec3 vEyeVec;
+    varying highp vec3 vFragPos;
 
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.2);
-            }
+    uniform vec4 uBaseColor;
+    uniform int uState; // 0=normal, 1=selected, 2=valid move, 3=last move, 4=check, 5=spider
 
-            playHit() {
-                if (!this.enabled) return;
-                this.init();
-                if (!this.ctx) return;
+    void main(void) {
+        vec3 N = normalize(vNormal);
+        vec3 V = normalize(vEyeVec);
+        vec3 lightDir = normalize(vec3(0.6, 1.2, 0.8));
 
-                const now = this.ctx.currentTime;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
+        float diff = max(dot(N, lightDir), 0.0);
+        vec3 ambient = vec3(0.25, 0.28, 0.35);
+        vec3 diffuse = vec3(0.9, 0.9, 0.85) * diff;
 
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(180, now);
-                osc.frequency.linearRampToValueAtTime(60, now + 0.15);
+        vec3 H = normalize(lightDir + V);
+        float spec = pow(max(dot(N, H), 0.0), 32.0);
+        vec3 specular = vec3(0.8) * spec * 0.45;
 
-                gain.gain.setValueAtTime(0.25, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        vec4 col = uBaseColor;
 
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.16);
-            }
+        if (uState == 1) { // Selected piece
+            col = mix(col, vec4(0.2, 0.9, 0.4, 1.0), 0.65);
+        } else if (uState == 2) { // Valid move dot / target
+            col = mix(col, vec4(0.95, 0.75, 0.1, 1.0), 0.7);
+        } else if (uState == 3) { // Last move
+            col = mix(col, vec4(0.3, 0.6, 1.0, 1.0), 0.45);
+        } else if (uState == 4) { // King under Check
+            col = mix(col, vec4(1.0, 0.15, 0.15, 1.0), 0.8);
+        } else if (uState == 5) { // Spider red-black chitin
+            col.rgb += vec3(0.08, 0.02, 0.02);
+        }
 
-            startSynthwaveBeat() {
-                if (!this.enabled) return;
-                this.init();
-                if (!this.ctx) return;
-                if (this.beatInterval) clearInterval(this.beatInterval);
+        vec3 finalColor = col.rgb * (ambient + diffuse) + specular;
+        gl_FragColor = vec4(finalColor, col.a);
+    }
+`;
 
-                const stepDuration = (60 / this.tempo) * 500; // Half-beat
-                this.beatInterval = setInterval(() => {
-                    if (!this.enabled || !this.ctx) return;
+function buildShader(gl, type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        console.error(gl.getShaderInfoLog(s));
+        gl.deleteShader(s);
+        return null;
+    }
+    return s;
+}
 
-                    const now = this.ctx.currentTime;
-                    const midiNote = this.bassline[this.sequenceIndex];
-                    const freq = this.midiToFreq(midiNote);
+const prog = gl.createProgram();
+gl.attachShader(prog, buildShader(gl, gl.VERTEX_SHADER, vsSource));
+gl.attachShader(prog, buildShader(gl, gl.FRAGMENT_SHADER, fsSource));
+gl.linkProgram(prog);
 
-                    // Synthesize warm analog bass sound
-                    const osc = this.ctx.createOscillator();
-                    const filter = this.ctx.createBiquadFilter();
-                    const gain = this.ctx.createGain();
+const pInfo = {
+    program: prog,
+    attribs: {
+        pos: gl.getAttribLocation(prog, 'aVertexPosition'),
+        norm: gl.getAttribLocation(prog, 'aVertexNormal'),
+    },
+    uniforms: {
+        proj: gl.getUniformLocation(prog, 'uProjectionMatrix'),
+        mv: gl.getUniformLocation(prog, 'uModelViewMatrix'),
+        norm: gl.getUniformLocation(prog, 'uNormalMatrix'),
+        color: gl.getUniformLocation(prog, 'uBaseColor'),
+        state: gl.getUniformLocation(prog, 'uState')
+    }
+};
 
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(freq, now);
+function createBox(w, h, d) {
+    w /= 2; h /= 2; d /= 2;
+    const positions = [
+        -w,-h, d,  w,-h, d,  w, h, d, -w, h, d,
+        -w,-h,-d, -w, h,-d,  w, h,-d,  w,-h,-d,
+        -w, h,-d, -w, h, d,  w, h, d,  w, h,-d,
+        -w,-h,-d,  w,-h,-d,  w,-h, d, -w,-h, d,
+         w,-h,-d,  w, h,-d,  w, h, d,  w,-h, d,
+        -w,-h,-d, -w,-h, d, -w, h, d, -w, h,-d
+    ];
+    const normals = [
+         0, 0, 1,  0, 0, 1,  0, 0, 1,  0, 0, 1,
+         0, 0,-1,  0, 0,-1,  0, 0,-1,  0, 0,-1,
+         0, 1, 0,  0, 1, 0,  0, 1, 0,  0, 1, 0,
+         0,-1, 0,  0,-1, 0,  0,-1, 0,  0,-1, 0,
+         1, 0, 0,  1, 0, 0,  1, 0, 0,  1, 0, 0,
+        -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0
+    ];
+    const indices = [];
+    for (let i = 0; i < 6; i++) {
+        let o = i * 4;
+        indices.push(o, o + 1, o + 2, o, o + 2, o + 3);
+    }
+    return { positions, normals, indices };
+}
 
-                    filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(160, now);
+function createCylinder(rBottom, rTop, height, segments) {
+    const positions = [], normals = [], indices = [];
+    const halfH = height / 2;
+    for (let i = 0; i <= segments; i++) {
+        let u = i / segments;
+        let th = u * Math.PI * 2;
+        let c = Math.cos(th), s = Math.sin(th);
+        positions.push(rBottom * c, -halfH, rBottom * s);
+        normals.push(c, 0, s);
+        positions.push(rTop * c, halfH, rTop * s);
+        normals.push(c, 0, s);
+    }
+    for (let i = 0; i < segments; i++) {
+        let p1 = i * 2, p2 = p1 + 1, p3 = p1 + 2, p4 = p1 + 3;
+        indices.push(p1, p2, p4, p1, p4, p3);
+    }
+    let offset = positions.length / 3;
+    positions.push(0, halfH, 0); normals.push(0, 1, 0);
+    let topC = offset++;
+    for (let i = 0; i <= segments; i++) {
+        let th = (i / segments) * Math.PI * 2;
+        positions.push(rTop * Math.cos(th), halfH, rTop * Math.sin(th));
+        normals.push(0, 1, 0);
+        if (i > 0) indices.push(topC, offset + i - 1, offset + i);
+    }
+    offset += segments + 1;
+    positions.push(0, -halfH, 0); normals.push(0, -1, 0);
+    let botC = offset++;
+    for (let i = 0; i <= segments; i++) {
+        let th = (i / segments) * Math.PI * 2;
+        positions.push(rBottom * Math.cos(th), -halfH, rBottom * Math.sin(th));
+        normals.push(0, -1, 0);
+        if (i > 0) indices.push(botC, offset + i, offset + i - 1);
+    }
+    return { positions, normals, indices };
+}
 
-                    gain.gain.setValueAtTime(0.08, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+function createSphere(radius, segW, segH) {
+    const positions = [], normals = [], indices = [];
+    for (let y = 0; y <= segH; y++) {
+        let v = y / segH;
+        let phi = v * Math.PI;
+        for (let x = 0; x <= segW; x++) {
+            let u = x / segW;
+            let theta = u * Math.PI * 2;
+            let px = Math.cos(theta) * Math.sin(phi);
+            let py = Math.cos(phi);
+            let pz = Math.sin(theta) * Math.sin(phi);
+            positions.push(px * radius, py * radius, pz * radius);
+            normals.push(px, py, pz);
+        }
+    }
+    for (let y = 0; y < segH; y++) {
+        for (let x = 0; x < segW; x++) {
+            let f = y * (segW + 1) + x;
+            let s = f + segW + 1;
+            indices.push(f, s, f + 1, s, s + 1, f + 1);
+        }
+    }
+    return { positions, normals, indices };
+}
 
-                    osc.connect(filter);
-                    filter.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.37);
+function mergeGeoms(items) {
+    const result = { positions: [], normals: [], indices: [] };
+    let indexOffset = 0;
+    for (let it of items) {
+        for (let i = 0; i < it.geom.positions.length; i += 3) {
+            result.positions.push(
+                it.geom.positions[i] + it.offset[0],
+                it.geom.positions[i + 1] + it.offset[1],
+                it.geom.positions[i + 2] + it.offset[2]
+            );
+        }
+        result.normals.push(...it.geom.normals);
+        result.indices.push(...it.geom.indices.map(v => v + indexOffset));
+        indexOffset += it.geom.positions.length / 3;
+    }
+    return result;
+}
 
-                    // Trigger visuals beat glow flare
-                    beatGlow = 1.0;
+function makeBuffer(geom) {
+    const pBuf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, pBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geom.positions), gl.STATIC_DRAW);
 
-                    // Add high-pass hi-hat click on alternating beats
-                    if (this.sequenceIndex % 2 === 1) {
-                        const hatOsc = this.ctx.createOscillator();
-                        const hatGain = this.ctx.createGain();
-                        hatOsc.type = 'triangle';
-                        hatOsc.frequency.setValueAtTime(8000, now);
-                        hatGain.gain.setValueAtTime(0.012, now);
-                        hatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-                        hatOsc.connect(hatGain);
-                        hatGain.connect(this.ctx.destination);
-                        hatOsc.start(now);
-                        hatOsc.stop(now + 0.05);
-                    }
+    const nBuf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, nBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geom.normals), gl.STATIC_DRAW);
 
-                    this.sequenceIndex = (this.sequenceIndex + 1) % this.bassline.length;
-                }, stepDuration);
-            }
+    const iBuf = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuf);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geom.indices), gl.STATIC_DRAW);
 
-            stopSynthwaveBeat() {
-                if (this.beatInterval) {
-                    clearInterval(this.beatInterval);
-                    this.beatInterval = null;
+    return { pos: pBuf, norm: nBuf, ind: iBuf, count: geom.indices.length };
+}
+
+const basePieceGeom = createCylinder(0.38, 0.32, 0.16, 16);
+
+const spiderBody = mergeGeoms([
+    { geom: createSphere(0.18, 10, 10), offset: [0, 0.15, 0.12] },
+    { geom: createSphere(0.12, 8, 8), offset: [0, 0.12, -0.1] },
+    { geom: createSphere(0.035, 6, 6), offset: [-0.04, 0.14, -0.2] },
+    { geom: createSphere(0.035, 6, 6), offset: [0.04, 0.14, -0.2] },
+]);
+
+const spiderLegRight = mergeGeoms([
+    { geom: createBox(0.42, 0.025, 0.025), offset: [0.21, 0.14, 0] },
+    { geom: createBox(0.025, 0.28, 0.025), offset: [0.42, 0.0, 0] }
+]);
+const spiderLegLeft = mergeGeoms([
+    { geom: createBox(0.42, 0.025, 0.025), offset: [-0.21, 0.14, 0] },
+    { geom: createBox(0.025, 0.28, 0.025), offset: [-0.42, 0.0, 0] }
+]);
+
+const Models = {
+    square: makeBuffer(createBox(1.0, 0.2, 1.0)),
+    border: makeBuffer(createBox(9.2, 0.18, 9.2)),
+    table: makeBuffer(createBox(32.0, 0.1, 32.0)),
+    spiderBody: makeBuffer(spiderBody),
+    spiderLegR: makeBuffer(spiderLegRight),
+    spiderLegL: makeBuffer(spiderLegLeft),
+    pawn: makeBuffer(mergeGeoms([
+        { geom: basePieceGeom, offset: [0, 0.08, 0] },
+        { geom: createCylinder(0.24, 0.14, 0.55, 14), offset: [0, 0.45, 0] },
+        { geom: createSphere(0.18, 14, 12), offset: [0, 0.85, 0] }
+    ])),
+    rook: makeBuffer(mergeGeoms([
+        { geom: basePieceGeom, offset: [0, 0.08, 0] },
+        { geom: createCylinder(0.28, 0.26, 0.65, 14), offset: [0, 0.5, 0] },
+        { geom: createCylinder(0.33, 0.33, 0.25, 8), offset: [0, 0.95, 0] },
+        { geom: createBox(0.1, 0.1, 0.35), offset: [0, 1.1, 0] }
+    ])),
+    knight: makeBuffer(mergeGeoms([
+        { geom: basePieceGeom, offset: [0, 0.08, 0] },
+        { geom: createCylinder(0.28, 0.22, 0.5, 12), offset: [0, 0.42, 0] },
+        { geom: createBox(0.35, 0.45, 0.5), offset: [0, 0.78, 0.1] },
+        { geom: createSphere(0.15, 8, 8), offset: [0, 0.95, -0.05] }
+    ])),
+    bishop: makeBuffer(mergeGeoms([
+        { geom: basePieceGeom, offset: [0, 0.08, 0] },
+        { geom: createCylinder(0.25, 0.14, 0.75, 14), offset: [0, 0.55, 0] },
+        { geom: createSphere(0.2, 14, 12), offset: [0, 1.05, 0] },
+        { geom: createSphere(0.06, 8, 8), offset: [0, 1.3, 0] }
+    ])),
+    queen: makeBuffer(mergeGeoms([
+        { geom: basePieceGeom, offset: [0, 0.08, 0] },
+        { geom: createCylinder(0.3, 0.15, 1.0, 16), offset: [0, 0.7, 0] },
+        { geom: createCylinder(0.15, 0.35, 0.2, 16), offset: [0, 1.3, 0] },
+        { geom: createCylinder(0.04, 0, 0.2, 12), offset: [-0.2, 1.5, 0.22] },
+        { geom: createCylinder(0.04, 0, 0.2, 12), offset: [0, 1.5, 0.3] },
+        { geom: createCylinder(0.04, 0, 0.2, 12), offset: [0.2, 1.5, 0.22] },
+        { geom: createCylinder(0.04, 0, 0.2, 12), offset: [0.3, 1.5, 0.00] },
+        { geom: createCylinder(0.04, 0, 0.2, 12), offset: [0.2, 1.5, -0.22] },
+        { geom: createCylinder(0.04, 0, 0.2, 12), offset: [0.0, 1.5, -0.3] },
+        { geom: createCylinder(0.04, 0, 0.2, 12), offset: [-0.2, 1.5, -0.22] },
+        { geom: createCylinder(0.04, 0, 0.2, 12), offset: [-0.3, 1.5, 0.00] }
+    ])),
+    king: makeBuffer(mergeGeoms([
+        { geom: basePieceGeom, offset: [0, 0.08, 0] },
+        { geom: createCylinder(0.32, 0.2, 1.05, 16), offset: [0, 0.7, 0] },
+        { geom: createCylinder(0.26, 0.28, 0.25, 16), offset: [0, 1.35, 0] },
+        { geom: createBox(0.09, 0.28, 0.09), offset: [0, 1.6, 0] },
+        { geom: createBox(0.25, 0.09, 0.09), offset: [0, 1.6, 0] }
+    ]))
+};
+
+const PIECE_NAMES = { p: 'pawn', r: 'rook', n: 'knight', b: 'bishop', q: 'queen', k: 'king' };
+const PALETTE = {
+    whitePiece: [0.94, 0.94, 0.92, 1.0],
+    blackPiece: [0.15, 0.16, 0.19, 1.0],
+    sqLight: [0.85, 0.82, 0.76, 1.0],
+    sqDark: [0.38, 0.29, 0.24, 1.0],
+    borderMat: [0.18, 0.12, 0.10, 1.0],
+    tableMat: [0.07, 0.08, 0.10, 1.0],
+    spiderChitin: [0.08, 0.03, 0.03, 1.0]
+};
+
+class ChessEngine {
+    constructor() {
+        this.reset();
+    }
+    reset() {
+        this.board = new Array(64).fill(null);
+        this.turn = 'w';
+        this.castling = { wK: true, wQ: true, bK: true, bQ: true };
+        this.enPassant = null;
+        this.history = [];
+        this.capturedWhite = [];
+        this.capturedBlack = [];
+        this.loadFEN('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+    }
+    loadFEN(fen) {
+        const parts = fen.split(' ');
+        const rows = parts[0].split('/');
+        let idx = 0;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < rows[r].length; c++) {
+                const ch = rows[r][c];
+                if (isNaN(ch)) {
+                    this.board[idx++] = { type: ch.toLowerCase(), color: ch === ch.toUpperCase() ? 'w' : 'b' };
+                } else {
+                    idx += parseInt(ch);
                 }
             }
         }
+    }
+    getPseudoLegalMoves(color) {
+        const moves = [];
+        for (let i = 0; i < 64; i++) {
+            const p = this.board[i];
+            if (p && p.color === color) {
+                this.getPieceMoves(i, p, moves);
+            }
+        }
+        return moves;
+    }
+    getPieceMoves(idx, p, moves) {
+        const r = Math.floor(idx / 8), c = idx % 8;
+        const dir = p.color === 'w' ? -1 : 1;
+        const opp = p.color === 'w' ? 'b' : 'w';
 
-        const audioSynth = new RetroAudioSynthesizer();
-
-        /* Custom Wireframe 3D Perspective Projection Engine (HTML5 Canvas) */
-        const canvas = document.getElementById('canvas-3d');
-        const ctx = canvas.getContext('2d');
-
-        // State Machine
-        const GAME_STATES = { MENU: 0, PLAYING: 1, GAMEOVER: 2 };
-        let currentGameState = GAME_STATES.MENU;
-
-        // Visual Perspective Metrics
-        const CAMERA_FOV = 220; // Zoom factor
-        let cameraX = 0;
-        let cameraY = 3.5;
-        let cameraZ = 0;
-        let pitch = -0.04; // Tilted angle looking down at road
-
-        // Dynamic Road dimensions
-        const LANE_WIDTH = 5;
-        const SEGMENT_LENGTH = 10;
-        const HORIZON_LIMIT = 300; // Z deep perspective limit
-        let highwayZOffset = 0;
-
-        // Player ship tracking
-        let shipX = 0;
-        let targetLane = 0; // -1 (Left), 0 (Center), 1 (Right)
-        let shipTiltRoll = 0;
-        let shipTiltYaw = 0;
-
-        // Visual FX & Environment
-        let beatGlow = 0; // Pulsing beat value decaying dynamically
-
-        // Arrays of Game Entities (expressed in 3D: [x, y, z])
-        let obstacles = [];
-        let crystals = [];
-        let lasers = [];
-        let stars = [];
-        let particles = [];
-        let scenery = []; // Procedural synthwave towers, pyramids on the roadside
-
-        // Player properties / configs
-        let gameConfig = {
-            maxSpeed: 50,
-            currentSpeed: 20,
-            score: 0,
-            highScore: 0,
-            totalCrystals: 0,
-            shieldHealth: 100,
-            maxShieldHealth: 100,
-            engineLevel: 1,
-            shieldLevel: 1,
-            weaponLevel: 1,
-            cameraTilt: true,
-            difficulty: 1 // 0: Cruise, 1: Hyper, 2: Overdrive
+        const addMove = (to, type = 'normal', promo = null) => {
+            moves.push({ from: idx, to, type, captured: this.board[to], promo });
         };
 
-        // 3D rotation math helpers (to animate power cores in space)
-        function rotate3D_Y(pt, angle) {
-            const cos = Math.cos(angle);
-            const sin = Math.sin(angle);
-            return {
-                x: pt.x * cos - pt.z * sin,
-                y: pt.y,
-                z: pt.x * sin + pt.z * cos
-            };
-        }
-
-        function rotate3D_X(pt, angle) {
-            const cos = Math.cos(angle);
-            const sin = Math.sin(angle);
-            return {
-                x: pt.x,
-                y: pt.y * cos - pt.z * sin,
-                z: pt.y * sin + pt.z * cos
-            };
-        }
-
-        function getRoadGeometry(z) {
-            // Organic multi-sine waves curve the road left/right and up/down
-            const curve = Math.sin(z * 0.004) * 14 + Math.cos(z * 0.01) * 5;
-            const hill = Math.sin(z * 0.006) * 6 + Math.cos(z * 0.015) * 2;
-            return { x: curve, y: hill };
-        }
-
-        // Project absolute coordinate space directly (ignoring curves) - ideal for static starfield
-        function project3D_Absolute(x, y, z) {
-            let cx = x - cameraX;
-            let cy = y - cameraY;
-            let cz = z - cameraZ;
-
-            if (cz >= -1) return null;
-
-            const cosPitch = Math.cos(pitch);
-            const sinPitch = Math.sin(pitch);
-            const ry = cy * cosPitch - cz * sinPitch;
-            const rz = cy * sinPitch + cz * cosPitch;
-
-            if (rz >= 0) return null;
-
-            const scale = CAMERA_FOV / -rz;
-            const screenX = canvas.width / 2 + cx * scale;
-            const screenY = canvas.height / 2 - ry * scale;
-
-            return { x: screenX, y: screenY, scale: scale };
-        }
-
-        function project3D(relativeX, relativeY, absoluteZ) {
-            // Retrieve highway geometry shifts at target coordinate depth and camera perspective depth
-            const geomObj = getRoadGeometry(absoluteZ);
-            const geomCam = getRoadGeometry(cameraZ);
-
-            let cx = (relativeX + geomObj.x) - (cameraX + geomCam.x);
-            let cy = (relativeY + geomObj.y) - (cameraY + geomCam.y);
-            let cz = absoluteZ - cameraZ;
-
-            // Clip entities that fall behind camera depth
-            if (cz >= -1) return null;
-
-            // Apply camera pitch (rotation around X-axis looking downward)
-            const cosPitch = Math.cos(pitch);
-            const sinPitch = Math.sin(pitch);
-            const ry = cy * cosPitch - cz * sinPitch;
-            const rz = cy * sinPitch + cz * cosPitch;
-
-            // Guard division by zero
-            if (rz >= 0) return null;
-
-            // Perspective scale division
-            const scale = CAMERA_FOV / -rz;
-            const screenX = canvas.width / 2 + cx * scale;
-            const screenY = canvas.height / 2 - ry * scale;
-
-            return {
-                x: screenX,
-                y: screenY,
-                scale: scale
-            };
-        }
-
-        /* Space Starfield procedural engine */
-        function initStarfield() {
-            stars = [];
-            const starCount = 300;
-            for (let i = 0; i < starCount; i++) {
-                stars.push({
-                    x: (Math.random() - 0.5) * 400,
-                    y: Math.random() * 120 + 2, // stars high above road
-                    z: -Math.random() * 400
-                });
-            }
-        }
-
-        function updateStarfield(dt, speed) {
-            stars.forEach(star => {
-                // Stars move slightly to enhance speed perception
-                star.z += speed * dt * 0.15;
-                if (star.z > 0) {
-                    star.z = -350 - Math.random() * 50;
-                    star.x = (Math.random() - 0.5) * 400;
-                }
-            });
-        }
-
-        function drawStarfield() {
-            stars.forEach(star => {
-                // Stars stay locked in space, unaffected by the twisting curves of the highway
-                const proj = project3D_Absolute(star.x, star.y, star.z);
-                if (proj) {
-                    // Decide star brightness by depth
-                    const progress = 1 - (Math.abs(star.z) / 400);
-                    const brightness = Math.max(0.1, Math.min(1, progress));
-                    
-                    // Choose neon coloring
-                    ctx.fillStyle = `rgba(0, 243, 255, ${brightness})`;
-                    const size = Math.max(1, proj.scale * 0.15);
-                    ctx.fillRect(proj.x, proj.y, size, size);
-                }
-            });
-        }
-
-        function drawHighway() {
-            const maxSegments = Math.ceil(HORIZON_LIMIT / SEGMENT_LENGTH) + 2;
-            const offset = Math.abs(cameraZ % SEGMENT_LENGTH);
-
-            // Left, Right and Center lanes coordinates
-            const lineXCoords = [
-                -2.5 * LANE_WIDTH,
-                -0.5 * LANE_WIDTH,
-                0.5 * LANE_WIDTH,
-                2.5 * LANE_WIDTH
-            ];
-
-            // Render the solid road bed first (from far to near so layering blends correctly)
-            for (let s = maxSegments; s >= 0; s--) {
-                const z1 = cameraZ - (s * SEGMENT_LENGTH) - offset;
-                const z2 = cameraZ - ((s + 1) * SEGMENT_LENGTH) - offset;
-
-                const ptL1 = project3D(lineXCoords[0], 0, z1);
-                const ptR1 = project3D(lineXCoords[lineXCoords.length - 1], 0, z1);
-                const ptL2 = project3D(lineXCoords[0], 0, z2);
-                const ptR2 = project3D(lineXCoords[lineXCoords.length - 1], 0, z2);
-
-                if (ptL1 && ptR1 && ptL2 && ptR2) {
-                    const depthProgress = 1 - (Math.abs(z1 - cameraZ) / HORIZON_LIMIT);
-                    
-                    // Alternating segment colors using absolute segment index
-                    const segmentIndex = Math.floor(Math.abs(z1) / SEGMENT_LENGTH);
-                    const isEven = segmentIndex % 2 === 0;
-                    const baseAlpha = isEven ? 0.15 : 0.25;
-                    const alpha = Math.max(0, Math.min(baseAlpha, depthProgress * baseAlpha * 1.5));
-                    
-                    // Render dark purple/violet flat road bed
-                    ctx.fillStyle = isEven ? `rgba(112, 0, 255, ${alpha})` : `rgba(70, 0, 150, ${alpha})`;
-                    ctx.beginPath();
-                    ctx.moveTo(ptL1.x, ptL1.y);
-                    ctx.lineTo(ptR1.x, ptR1.y);
-                    ctx.lineTo(ptR2.x, ptR2.y);
-                    ctx.lineTo(ptL2.x, ptL2.y);
-                    ctx.closePath();
-                    ctx.fill();
-
-                    // Draw a subtle darker segment separation stroke for a grid tile effect
-                    ctx.strokeStyle = `rgba(112, 0, 255, ${alpha * 0.3})`;
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
+        const slide = (dr, dc) => {
+            for (let s = 1; s < 8; s++) {
+                let nr = r + dr * s, nc = c + dc * s;
+                if (nr < 0 || nr > 7 || nc < 0 || nc > 7) break;
+                let t = nr * 8 + nc;
+                if (!this.board[t]) {
+                    addMove(t);
+                } else {
+                    if (this.board[t].color === opp) addMove(t, 'capture');
+                    break;
                 }
             }
+        };
 
-            // Render longitudinal lane boundaries going to infinite horizon
-            lineXCoords.forEach((laneX, idx) => {
-                const points = [];
-                // Collect lines points along curved steps
-                for (let s = 0; s <= maxSegments; s++) {
-                    const currZ = cameraZ - (s * SEGMENT_LENGTH) - offset;
-                    points.push(project3D(laneX, 0, currZ));
+        const jumps = (offsets) => {
+            for (let o of offsets) {
+                let nr = r + o[0], nc = c + o[1];
+                if (nr >= 0 && nr <= 7 && nc >= 0 && nc <= 7) {
+                    let t = nr * 8 + nc;
+                    if (!this.board[t] || this.board[t].color === opp) {
+                        addMove(t, this.board[t] ? 'capture' : 'normal');
+                    }
                 }
+            }
+        };
 
-                ctx.beginPath();
-                let first = true;
-                points.forEach(pt => {
-                    if (pt) {
-                        if (first) {
-                            ctx.moveTo(pt.x, pt.y);
-                            first = false;
+        if (p.type === 'p') {
+            let fwd = (r + dir) * 8 + c;
+            if (r + dir >= 0 && r + dir <= 7 && !this.board[fwd]) {
+                if (r + dir === 0 || r + dir === 7) {
+                    ['q','r','b','n'].forEach(pr => addMove(fwd, 'promotion', pr));
+                } else {
+                    addMove(fwd);
+                    let dbl = (r + dir * 2) * 8 + c;
+                    if (((p.color === 'w' && r === 6) || (p.color === 'b' && r === 1)) && !this.board[dbl]) {
+                        addMove(dbl, 'double_pawn');
+                    }
+                }
+            }
+            for (let dc of [-1, 1]) {
+                let nc = c + dc, nr = r + dir;
+                if (nc >= 0 && nc <= 7 && nr >= 0 && nr <= 7) {
+                    let t = nr * 8 + nc;
+                    if (this.board[t] && this.board[t].color === opp) {
+                        if (nr === 0 || nr === 7) {
+                            ['q','r','b','n'].forEach(pr => addMove(t, 'promotion_capture', pr));
                         } else {
-                            ctx.lineTo(pt.x, pt.y);
+                            addMove(t, 'capture');
+                        }
+                    } else if (t === this.enPassant) {
+                        addMove(t, 'en_passant');
+                    }
+                }
+            }
+        } else if (p.type === 'n') {
+            jumps([[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]);
+        } else if (p.type === 'b') {
+            slide(-1,-1); slide(-1,1); slide(1,-1); slide(1,1);
+        } else if (p.type === 'r') {
+            slide(-1,0); slide(1,0); slide(0,-1); slide(0,1);
+        } else if (p.type === 'q') {
+            slide(-1,-1); slide(-1,1); slide(1,-1); slide(1,1);
+            slide(-1,0); slide(1,0); slide(0,-1); slide(0,1);
+        } else if (p.type === 'k') {
+            jumps([[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]);
+            if (p.color === 'w' && r === 7 && c === 4) {
+                if (this.castling.wK && !this.board[61] && !this.board[62] && !this.isSquareAttacked(60, 'b') && !this.isSquareAttacked(61, 'b')) addMove(62, 'castling');
+                if (this.castling.wQ && !this.board[59] && !this.board[58] && !this.board[57] && !this.isSquareAttacked(60, 'b') && !this.isSquareAttacked(59, 'b')) addMove(58, 'castling');
+            } else if (p.color === 'b' && r === 0 && c === 4) {
+                if (this.castling.bK && !this.board[5] && !this.board[6] && !this.isSquareAttacked(4, 'w') && !this.isSquareAttacked(5, 'w')) addMove(6, 'castling');
+                if (this.castling.bQ && !this.board[3] && !this.board[2] && !this.board[1] && !this.isSquareAttacked(4, 'w') && !this.isSquareAttacked(3, 'w')) addMove(2, 'castling');
+            }
+        }
+    }
+    isSquareAttacked(sq, byColor) {
+        const r = Math.floor(sq / 8), c = sq % 8;
+        for (let o of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) {
+            let nr = r + o[0], nc = c + o[1];
+            if (nr >= 0 && nr <= 7 && nc >= 0 && nc <= 7) {
+                let p = this.board[nr * 8 + nc];
+                if (p && p.color === byColor && p.type === 'n') return true;
+            }
+        }
+        const dirs = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
+        for (let i = 0; i < 8; i++) {
+            let dr = dirs[i][0], dc = dirs[i][1];
+            for (let s = 1; s < 8; s++) {
+                let nr = r + dr * s, nc = c + dc * s;
+                if (nr < 0 || nr > 7 || nc < 0 || nc > 7) break;
+                let p = this.board[nr * 8 + nc];
+                if (p) {
+                    if (p.color === byColor) {
+                        if (p.type === 'q') return true;
+                        if (p.type === 'r' && i < 4) return true;
+                        if (p.type === 'b' && i >= 4) return true;
+                        if (s === 1 && p.type === 'k') return true;
+                        if (s === 1 && p.type === 'p') {
+                            if (byColor === 'w' && dr === 1 && (dc === -1 || dc === 1)) return true;
+                            if (byColor === 'b' && dr === -1 && (dc === -1 || dc === 1)) return true;
                         }
                     }
-                });
-                
-                // Color exterior margins cyan, inner dividers pink, reacting to synth beat
-                if (idx === 0 || idx === lineXCoords.length - 1) {
-                    ctx.strokeStyle = `rgba(0, 243, 255, ${0.45 + beatGlow * 0.35})`;
-                    ctx.shadowColor = '#00f3ff';
-                    ctx.lineWidth = 3 + beatGlow * 2;
-                } else {
-                    ctx.strokeStyle = `rgba(255, 0, 127, ${0.3 + beatGlow * 0.3})`;
-                    ctx.shadowColor = '#ff007f';
-                    ctx.lineWidth = 1 + beatGlow;
-                }
-                ctx.shadowBlur = 4 + beatGlow * 6;
-                ctx.stroke();
-                ctx.shadowBlur = 0; // Reset shadow glow
-            });
-
-            // Render horizontal crossing divisions
-            for (let s = 0; s <= maxSegments; s++) {
-                const relativeZ = cameraZ - (s * SEGMENT_LENGTH) - offset;
-                
-                const ptL = project3D(lineXCoords[0], 0, relativeZ);
-                const ptR = project3D(lineXCoords[lineXCoords.length - 1], 0, relativeZ);
-
-                if (ptL && ptR) {
-                    const depthProgress = 1 - (Math.abs(relativeZ - cameraZ) / HORIZON_LIMIT);
-                    const alpha = Math.max(0, Math.min(0.5, depthProgress)) * (1 + beatGlow * 0.5);
-
-                    ctx.beginPath();
-                    ctx.moveTo(ptL.x, ptL.y);
-                    ctx.lineTo(ptR.x, ptR.y);
-                    ctx.strokeStyle = `rgba(112, 0, 255, ${alpha})`;
-                    ctx.lineWidth = 1.5 + beatGlow;
-                    ctx.stroke();
+                    break;
                 }
             }
         }
+        return false;
+    }
+    getLegalMoves() {
+        return this.getPseudoLegalMoves(this.turn).filter(m => {
+            this.makeMove(m);
+            const isCheck = this.isKingInCheck(this.turn === 'w' ? 'b' : 'w');
+            this.undoMove();
+            return !isCheck;
+        });
+    }
+    isKingInCheck(color) {
+        let kSq = this.board.findIndex(p => p && p.color === color && p.type === 'k');
+        if (kSq === -1) return false;
+        return this.isSquareAttacked(kSq, color === 'w' ? 'b' : 'w');
+    }
+    makeMove(m) {
+        let p = this.board[m.from];
+        if (!p) return;
 
-        /* Vector geometry model representation of the spaceship interceptor */
-        function drawPlayerShip() {
-            // Base local coords model of vector ship
-            const localVertices = [
-                { x: 0, y: 0, z: -1.4 },    // 0: Nose pointer
-                { x: -1.0, y: -0.15, z: 0.6 }, // 1: Left Wing
-                { x: 1.0, y: -0.15, z: 0.6 },  // 2: Right Wing
-                { x: -0.2, y: 0.25, z: 0.2 },  // 3: Left Canopy
-                { x: 0.2, y: 0.25, z: 0.2 },   // 4: Right Canopy
-                { x: 0, y: -0.1, z: 1.0 }     // 5: Engine Exhaust
-            ];
+        let capturedPiece = m.captured;
+        if (m.type === 'en_passant') {
+            capturedPiece = this.board[m.to + (p.color === 'w' ? 8 : -8)];
+        }
+        if (capturedPiece) {
+            if (capturedPiece.color === 'w') this.capturedWhite.push(capturedPiece.type);
+            else this.capturedBlack.push(capturedPiece.type);
+        }
 
-            // Apply roll rotation matrices around Z-axis during lane-switching actions
-            const cosRoll = Math.cos(shipTiltRoll);
-            const sinRoll = Math.sin(shipTiltRoll);
-            const cosYaw = Math.cos(shipTiltYaw);
-            const sinYaw = Math.sin(shipTiltYaw);
+        this.history.push({
+            move: m,
+            castling: { ...this.castling },
+            enPassant: this.enPassant,
+            capturedWhite: [...this.capturedWhite],
+            capturedBlack: [...this.capturedBlack]
+        });
 
-            const rotatedVertices = localVertices.map(v => {
-                // Roll
-                let rx = v.x * cosRoll - v.y * sinRoll;
-                let ry = v.x * sinRoll + v.y * cosRoll;
-                // Yaw
-                let finalX = rx * cosYaw - v.z * sinYaw;
-                let finalZ = rx * sinYaw + v.z * cosYaw;
+        this.board[m.to] = p;
+        this.board[m.from] = null;
+        this.enPassant = null;
 
-                return {
-                    x: shipX + finalX,
-                    y: 0.55 + ry, // Hover height
-                    z: cameraZ - 5 + finalZ // Set position slightly ahead of camera view
-                };
-            });
+        if (m.type === 'double_pawn') {
+            this.enPassant = m.from + (p.color === 'w' ? -8 : 8);
+        } else if (m.type === 'en_passant') {
+            this.board[m.to + (p.color === 'w' ? 8 : -8)] = null;
+        } else if (m.type === 'castling') {
+            if (m.to === 62) { this.board[61] = this.board[63]; this.board[63] = null; }
+            else if (m.to === 58) { this.board[59] = this.board[56]; this.board[56] = null; }
+            else if (m.to === 6) { this.board[5] = this.board[7]; this.board[7] = null; }
+            else if (m.to === 2) { this.board[3] = this.board[0]; this.board[0] = null; }
+        } else if (m.promo) {
+            this.board[m.to] = { type: m.promo, color: p.color };
+        }
 
-            // Project vertices to screen (using relative projection to snap to curved highway geometry)
-            const screenPts = rotatedVertices.map(v => project3D(v.x, v.y, v.z));
+        if (p.type === 'k') {
+            if (p.color === 'w') { this.castling.wK = false; this.castling.wQ = false; }
+            else { this.castling.bK = false; this.castling.bQ = false; }
+        } else if (p.type === 'r') {
+            if (m.from === 56) this.castling.wQ = false;
+            if (m.from === 63) this.castling.wK = false;
+            if (m.from === 0) this.castling.bQ = false;
+            if (m.from === 7) this.castling.bK = false;
+        }
+        if (m.to === 56) this.castling.wQ = false;
+        if (m.to === 63) this.castling.wK = false;
+        if (m.to === 0) this.castling.bQ = false;
+        if (m.to === 7) this.castling.bK = false;
 
-            // Ensure all points projected properly
-            if (screenPts.some(pt => pt === null)) return;
+        this.turn = this.turn === 'w' ? 'b' : 'w';
+    }
+    undoMove() {
+        if (this.history.length === 0) return;
+        const state = this.history.pop();
+        const m = state.move;
+        this.castling = state.castling;
+        this.enPassant = state.enPassant;
+        this.capturedWhite = state.capturedWhite;
+        this.capturedBlack = state.capturedBlack;
+        this.turn = this.turn === 'w' ? 'b' : 'w';
 
-            // Draw structural glass panels with solid cyber pink fill colors
-            ctx.fillStyle = 'rgba(255, 0, 127, 0.25)';
-            ctx.beginPath();
-            ctx.moveTo(screenPts[0].x, screenPts[0].y); // Nose
-            ctx.lineTo(screenPts[1].x, screenPts[1].y); // Left Wing
-            ctx.lineTo(screenPts[5].x, screenPts[5].y); // Rear
-            ctx.lineTo(screenPts[2].x, screenPts[2].y); // Right Wing
-            ctx.closePath();
-            ctx.fill();
+        let p = this.board[m.to];
+        if (m.promo) p = { type: 'p', color: p.color };
+        this.board[m.from] = p;
+        this.board[m.to] = m.captured || null;
 
-            // Draw translucent cyan cockpit canopy
-            ctx.fillStyle = 'rgba(0, 243, 255, 0.6)';
-            ctx.beginPath();
-            ctx.moveTo(screenPts[0].x, screenPts[0].y); // Nose
-            ctx.lineTo(screenPts[3].x, screenPts[3].y); // Left cockpit
-            ctx.lineTo(screenPts[4].x, screenPts[4].y); // Right cockpit
-            ctx.closePath();
-            ctx.fill();
+        if (m.type === 'en_passant') {
+            this.board[m.to] = null;
+            this.board[m.to + (p.color === 'w' ? 8 : -8)] = { type: 'p', color: this.turn === 'w' ? 'b' : 'w' };
+        } else if (m.type === 'castling') {
+            if (m.to === 62) { this.board[63] = this.board[61]; this.board[61] = null; }
+            else if (m.to === 58) { this.board[56] = this.board[59]; this.board[59] = null; }
+            else if (m.to === 6) { this.board[7] = this.board[5]; this.board[5] = null; }
+            else if (m.to === 2) { this.board[0] = this.board[3]; this.board[3] = null; }
+        }
+    }
+}
 
-            // Outline glowing vector edges
-            ctx.lineWidth = 2.5;
-            ctx.strokeStyle = '#00f3ff';
-            ctx.shadowColor = '#00f3ff';
-            ctx.shadowBlur = 8 + beatGlow * 6;
+const PST_CENTER = [
+    -15,-5,-5,-5,-5,-5,-5,-15,
+     -5, 0, 5, 5, 5, 5, 0, -5,
+     -5, 5,15,20,20,15, 5, -5,
+     -5, 5,20,25,25,20, 5, -5,
+     -5, 5,20,25,25,20, 5, -5,
+     -5, 5,15,20,20,15, 5, -5,
+     -5, 0, 5, 5, 5, 5, 0, -5,
+    -15,-5,-5,-5,-5,-5,-5,-15
+];
 
-            ctx.beginPath();
-            // Wing boundaries
-            ctx.moveTo(screenPts[1].x, screenPts[1].y);
-            ctx.lineTo(screenPts[0].x, screenPts[0].y);
-            ctx.lineTo(screenPts[2].x, screenPts[2].y);
-            // Thruster joints
-            ctx.lineTo(screenPts[5].x, screenPts[5].y);
-            ctx.lineTo(screenPts[1].x, screenPts[1].y);
+class ChessAI {
+    constructor(engine) {
+        this.engine = engine;
+    }
+    evaluate() {
+        const pieceValues = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+        let score = 0;
+        for (let i = 0; i < 64; i++) {
+            const p = this.engine.board[i];
+            if (p) {
+                let v = pieceValues[p.type] + (p.type !== 'k' ? PST_CENTER[i] : 0);
+                score += (p.color === 'w' ? v : -v);
+            }
+        }
+        return score;
+    }
+    getBestMove(depth) {
+        const isMax = this.engine.turn === 'w';
+        const legalMoves = this.engine.getLegalMoves();
+        if (legalMoves.length === 0) return null;
+
+        legalMoves.sort((a, b) => (b.captured ? 10 : 0) - (a.captured ? 10 : 0));
+
+        let bestMove = legalMoves[0];
+        let bestVal = isMax ? -Infinity : Infinity;
+
+        for (let m of legalMoves) {
+            this.engine.makeMove(m);
+            let val = this.alphaBeta(depth - 1, -Infinity, Infinity, !isMax);
+            this.engine.undoMove();
+
+            if (isMax) {
+                if (val > bestVal) { bestVal = val; bestMove = m; }
+            } else {
+                if (val < bestVal) { bestVal = val; bestMove = m; }
+            }
+        }
+        return bestMove;
+    }
+    alphaBeta(depth, alpha, beta, isMax) {
+        if (depth === 0) return this.evaluate();
+        const moves = this.engine.getLegalMoves();
+        if (moves.length === 0) {
+            if (this.engine.isKingInCheck(this.engine.turn)) {
+                return isMax ? -25000 : 25000;
+            }
+            return 0;
+        }
+        moves.sort((a, b) => (b.captured ? 10 : 0) - (a.captured ? 10 : 0));
+
+        if (isMax) {
+            let maxEval = -Infinity;
+            for (let m of moves) {
+                this.engine.makeMove(m);
+                let ev = this.alphaBeta(depth - 1, alpha, beta, false);
+                this.engine.undoMove();
+                maxEval = Math.max(maxEval, ev);
+                alpha = Math.max(alpha, ev);
+                if (beta <= alpha) break;
+            }
+            return maxEval;
+        } else {
+            let minEval = Infinity;
+            for (let m of moves) {
+                this.engine.makeMove(m);
+                let ev = this.alphaBeta(depth - 1, alpha, beta, true);
+                this.engine.undoMove();
+                minEval = Math.min(minEval, ev);
+                beta = Math.min(beta, ev);
+                if (beta <= alpha) break;
+            }
+            return minEval;
+        }
+    }
+}
+
+let audioMuted = false;
+let audioCtx = null;
+function getAudioContext() {
+    if (!audioCtx) {
+        const AudioC = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioC();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+}
+
+function playTone(type) {
+    if (audioMuted) return;
+    try {
+        const ctx = getAudioContext();
+        const t = ctx.currentTime;
+        if (type === 'select') {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.frequency.setValueAtTime(520, t);
+            osc.frequency.exponentialRampToValueAtTime(780, t + 0.08);
+            g.gain.setValueAtTime(0.2, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+            osc.connect(g).connect(ctx.destination);
+            osc.start(t); osc.stop(t + 0.08);
+        } else if (type === 'move') {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(140, t);
+            osc.frequency.exponentialRampToValueAtTime(50, t + 0.12);
+            g.gain.setValueAtTime(0.4, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+            osc.connect(g).connect(ctx.destination);
+            osc.start(t); osc.stop(t + 0.12);
+        } else if (type === 'capture') {
+            const osc1 = ctx.createOscillator();
+            const osc2 = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc1.type = 'sawtooth'; osc2.type = 'square';
+            osc1.frequency.setValueAtTime(180, t); osc1.frequency.exponentialRampToValueAtTime(30, t + 0.22);
+            osc2.frequency.setValueAtTime(90, t); osc2.frequency.exponentialRampToValueAtTime(20, t + 0.22);
+            g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+            osc1.connect(g); osc2.connect(g); g.connect(ctx.destination);
+            osc1.start(t); osc2.start(t); osc1.stop(t + 0.22); osc2.stop(t + 0.22);
+        } else if (type === 'check') {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, t);
+            osc.frequency.setValueAtTime(660, t + 0.1);
+            g.gain.setValueAtTime(0.3, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+            osc.connect(g).connect(ctx.destination);
+            osc.start(t); osc.stop(t + 0.25);
+        }
+    } catch(e) {}
+}
+
+// Spider State setup
+    let spiders = [];
+    for(let i=0; i<12; i++) {
+        spiders.push({
+            x: (Math.random() > 0.5 ? 1 : -1) * (5 + Math.random() * 5),
+            z: (Math.random() > 0.5 ? 1 : -1) * (5 + Math.random() * 5),
+            angle: Math.random() * Math.PI * 2,
+            speed: 0.003 + Math.random() * 0.007,
+            turnSpeed: 0.0,
+            legPhase: Math.random() * Math.PI * 2,
+            scale: 0.3 + Math.random() * 0.4
+        });
+    }
+
+    function updateSpiders() {
+        spiders.forEach(s => {
+            s.angle += s.turnSpeed;
+            if (Math.random() < 0.05) s.turnSpeed = (Math.random() - 0.5) * 0.1;
             
-            // Cockpit frame
-            ctx.moveTo(screenPts[3].x, screenPts[3].y);
-            ctx.lineTo(screenPts[4].x, screenPts[4].y);
-            ctx.lineTo(screenPts[0].x, screenPts[0].y);
-            ctx.lineTo(screenPts[3].x, screenPts[3].y);
-            ctx.stroke();
+            let nx = s.x + Math.sin(s.angle) * s.speed;
+            let nz = s.z + Math.cos(s.angle) * s.speed;
 
-            // Draw dynamic flame booster exhaust particle spikes
-            const engineScale = screenPts[5].scale;
-            ctx.beginPath();
-            ctx.moveTo(screenPts[5].x - engineScale * 0.12, screenPts[5].y);
-            ctx.lineTo(screenPts[5].x, screenPts[5].y + engineScale * (0.3 + Math.random() * 0.3));
-            ctx.lineTo(screenPts[5].x + engineScale * 0.12, screenPts[5].y);
-            ctx.closePath();
-            ctx.fillStyle = '#ff007f';
-            ctx.shadowColor = '#ff007f';
-            ctx.fill();
-
-            ctx.shadowBlur = 0; // Reset
-        }
-
-        function spawnScenery() {
-            const side = Math.random() < 0.5 ? -1 : 1;
-            // Place scenery objects far enough outside the track lanes
-            const roadSideX = side * (LANE_WIDTH * 2.2 + Math.random() * 15);
-            const sceneryZ = cameraZ - 240;
-
-            const type = Math.random() < 0.5 ? 'pyramid' : 'tower';
-            scenery.push({
-                x: roadSideX,
-                y: 0,
-                z: sceneryZ,
-                type: type,
-                width: 4 + Math.random() * 6,
-                height: 6 + Math.random() * 10,
-                color: Math.random() < 0.5 ? '#7000ff' : '#00f3ff'
-            });
-        }
-
-        /* Entity management (Obstacles, Crystals, Lasers, Particle explosions) */
-        function spawnObstacle() {
-            const laneIndex = Math.floor(Math.random() * 3) - 1; // -1, 0, 1
-            const obstacleZ = cameraZ - 200 - Math.random() * 50;
-
-            // Prevent stacking
-            if (obstacles.some(o => Math.abs(o.z - obstacleZ) < 15 && o.lane === laneIndex)) return;
-
-            obstacles.push({
-                lane: laneIndex,
-                x: laneIndex * LANE_WIDTH,
-                y: 1.0, // Center point height
-                z: obstacleZ,
-                width: LANE_WIDTH * 0.8,
-                height: 2.0,
-                depth: 2.0,
-                health: 10 + (gameConfig.difficulty * 10)
-            });
-        }
-
-        function spawnCrystal() {
-            const laneIndex = Math.floor(Math.random() * 3) - 1;
-            const crystalZ = cameraZ - 180 - Math.random() * 60;
-
-            if (crystals.some(c => Math.abs(c.z - crystalZ) < 10 && c.lane === laneIndex)) return;
-
-            crystals.push({
-                lane: laneIndex,
-                x: laneIndex * LANE_WIDTH,
-                y: 0.8,
-                z: crystalZ,
-                rotationAngle: Math.random() * Math.PI,
-                size: 0.6
-            });
-        }
-
-        function fireLaser() {
-            const count = gameConfig.weaponLevel;
-            audioSynth.playShoot();
-
-            const laserSpeed = 160;
-
-            if (count === 1) {
-                // One single direct laser
-                lasers.push({ x: shipX, y: 0.5, z: cameraZ - 6, vx: 0, speed: laserSpeed });
-            } else if (count === 2) {
-                // Dual spread lasers
-                lasers.push({ x: shipX - 0.7, y: 0.5, z: cameraZ - 6, vx: 0, speed: laserSpeed });
-                lasers.push({ x: shipX + 0.7, y: 0.5, z: cameraZ - 6, vx: 0, speed: laserSpeed });
+            // Constrain spiders to perimeter bounds (bounce off the board edge)
+            if ((nx > -4.5 && nx < 4.5 && nz > -4.5 && nz < 4.5) || Math.abs(nx) > 12 || Math.abs(nz) > 12) {
+                s.angle += Math.PI + (Math.random() - 0.5); // bounce and add noise
+                s.turnSpeed = 0;
             } else {
-                // Multi-triple spread array configuration
-                lasers.push({ x: shipX, y: 0.5, z: cameraZ - 6, vx: 0, speed: laserSpeed });
-                lasers.push({ x: shipX - 0.9, y: 0.5, z: cameraZ - 6, vx: -12, speed: laserSpeed });
-                lasers.push({ x: shipX + 0.9, y: 0.5, z: cameraZ - 6, vx: 12, speed: laserSpeed });
+                s.x = nx;
+                s.z = nz;
             }
-        }
-
-        function triggerExplosion(x, y, z, color) {
-            audioSynth.playExplosion();
-            const count = 20;
-            for (let i = 0; i < count; i++) {
-                particles.push({
-                    x: x, y: y, z: z,
-                    vx: (Math.random() - 0.5) * 15,
-                    vy: (Math.random() - 0.3) * 12 + 4,
-                    vz: (Math.random() - 0.5) * 15,
-                    color: color,
-                    life: 0.6 + Math.random() * 0.4,
-                    maxLife: 1.0
-                });
-            }
-        }
-
-        function updateEntities(dt) {
-            // Speed settings scaling based on difficulty metrics
-            const speedScale = 1 + (gameConfig.engineLevel * 0.15) + (gameConfig.difficulty * 0.3);
-            const targetSpeed = gameConfig.maxSpeed * speedScale;
-            gameConfig.currentSpeed += (targetSpeed - gameConfig.currentSpeed) * 1.5 * dt;
-
-            // Camera moves along the infinite corridor
-            cameraZ -= gameConfig.currentSpeed * dt;
-            highwayZOffset = cameraZ;
-
-            // Update Ship lateral transitions (lane snapping speed)
-            const targetX = targetLane * LANE_WIDTH;
-            const driftSpeed = 11;
-            const diffX = targetX - shipX;
-            shipX += diffX * driftSpeed * dt;
-
-            // Roll yaw visual tilt formulas
-            shipTiltRoll = -diffX * 0.15;
-            shipTiltYaw = -diffX * 0.08;
-
-            // Dynamic camera trailing
-            if (gameConfig.cameraTilt) {
-                cameraX += (shipX * 0.45 - cameraX) * 5 * dt;
-            } else {
-                cameraX = 0;
-            }
-
-            // Move star tracker
-            updateStarfield(dt, gameConfig.currentSpeed);
-
-            // Spawning frequencies
-            const spawnRate = 0.015 + (gameConfig.difficulty * 0.005);
-            if (Math.random() < spawnRate) spawnObstacle();
-            if (Math.random() < 0.012) spawnCrystal();
-            if (Math.random() < 0.04) spawnScenery();
-
-            // Update Lasers
-            for (let i = lasers.length - 1; i >= 0; i--) {
-                const l = lasers[i];
-                l.z -= l.speed * dt;
-                l.x += (l.vx || 0) * dt;
-
-                // Recycle out-of-bounds lasers
-                if (l.z < cameraZ - HORIZON_LIMIT) {
-                    lasers.splice(i, 1);
-                }
-            }
-
-            // Update Obstacles
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                const obs = obstacles[i];
-                // Obstacle passed behind camera
-                if (obs.z > cameraZ + 5) {
-                    obstacles.splice(i, 1);
-                }
-            }
-
-            // Update Crystals
-            for (let i = crystals.length - 1; i >= 0; i--) {
-                const cry = crystals[i];
-                cry.rotationAngle += 2.0 * dt;
-                if (cry.z > cameraZ + 5) {
-                    crystals.splice(i, 1);
-                }
-            }
-
-            // Update Scenery decoration items
-            for (let i = scenery.length - 1; i >= 0; i--) {
-                const item = scenery[i];
-                if (item.z > cameraZ + 20) {
-                    scenery.splice(i, 1);
-                }
-            }
-
-            // Update Particles
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                p.life -= dt;
-                p.x += p.vx * dt;
-                p.y += p.vy * dt;
-                p.vy -= 9.8 * dt; // gravity deceleration simulation
-                p.z += p.vz * dt;
-
-                if (p.life <= 0) {
-                    particles.splice(i, 1);
-                }
-            }
-
-            // Collision check operations
-            processCollisions();
-
-            // Update score
-            gameConfig.score += gameConfig.currentSpeed * dt * (1 + gameConfig.difficulty * 0.5);
-            updateHUDElements();
-        }
-
-        /* Dynamic Collision and hit solver */
-        function processCollisions() {
-            const shipRadius = 1.0;
-            const shipZ = cameraZ - 5; // Coordinates location of ship
-
-            // 1. Ship hitting obstacles
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                const obs = obstacles[i];
-                
-                // Absolute axis bound checks
-                const dz = Math.abs(obs.z - shipZ);
-                const dx = Math.abs(obs.x - shipX);
-
-                if (dz < (obs.depth / 2 + 0.5) && dx < (obs.width / 2 + 0.6)) {
-                    // Collision occurred!
-                    triggerExplosion(obs.x, obs.y, obs.z, '#ff007f');
-                    audioSynth.playHit();
-                    obstacles.splice(i, 1);
-
-                    // Shield dampening upgrade index
-                    const dampener = gameConfig.shieldLevel * 15;
-                    const damageValue = Math.max(15, 50 - dampener);
-                    gameConfig.shieldHealth -= damageValue;
-
-                    updateHUDElements();
-
-                    if (gameConfig.shieldHealth <= 0) {
-                        triggerExplosion(shipX, 0.5, shipZ, '#00f3ff');
-                        triggerExplosion(shipX, 0.5, shipZ, '#ff007f');
-                        endGame();
-                    }
-                }
-            }
-
-            // 2. Ship collecting Energy Cores (crystals)
-            for (let i = crystals.length - 1; i >= 0; i--) {
-                const cry = crystals[i];
-                const dz = Math.abs(cry.z - shipZ);
-                const dx = Math.abs(cry.x - shipX);
-
-                if (dz < 1.2 && dx < 1.2) {
-                    // Successful extraction
-                    audioSynth.playCollect();
-                    triggerExplosion(cry.x, cry.y, cry.z, '#00f3ff');
-                    crystals.splice(i, 1);
-
-                    gameConfig.totalCrystals++;
-                    saveData();
-                    updateHUDElements();
-                }
-            }
-
-            // 3. Lasers breaking barriers
-            for (let l = lasers.length - 1; l >= 0; l--) {
-                const laser = lasers[l];
-
-                for (let o = obstacles.length - 1; o >= 0; o--) {
-                    const obs = obstacles[o];
-
-                    const dz = Math.abs(obs.z - laser.z);
-                    const dx = Math.abs(obs.x - laser.x);
-
-                    if (dz < (obs.depth / 2 + 0.6) && dx < (obs.width / 2 + 0.5)) {
-                        // Impact!
-                        triggerExplosion(laser.x, obs.y, laser.z, '#ff007f');
-                        lasers.splice(l, 1);
-
-                        const weaponDmg = 10 + (gameConfig.weaponLevel * 15);
-                        obs.health -= weaponDmg;
-
-                        if (obs.health <= 0) {
-                            triggerExplosion(obs.x, obs.y, obs.z, '#ef4444');
-                            obstacles.splice(o, 1);
-                            gameConfig.score += 250;
-                            updateHUDElements();
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-
-        function drawEntities() {
-            // Stars in background drawn first
-            drawStarfield();
-
-            // Draw Roadside Scenery (Pyramids, towers with glowing wireframes)
-            scenery.forEach(item => {
-                if (item.type === 'pyramid') {
-                    // Coordinates of bases and apex relative to road geometry
-                    const halfW = item.width / 2;
-                    const b1 = project3D(item.x - halfW, 0, item.z - halfW);
-                    const b2 = project3D(item.x + halfW, 0, item.z - halfW);
-                    const b3 = project3D(item.x + halfW, 0, item.z + halfW);
-                    const b4 = project3D(item.x - halfW, 0, item.z + halfW);
-                    const peak = project3D(item.x, item.height, item.z);
-
-                    if (b1 && b2 && b3 && b4 && peak) {
-                        ctx.strokeStyle = item.color;
-                        ctx.shadowColor = item.color;
-                        ctx.shadowBlur = 4 + beatGlow * 5;
-                        ctx.lineWidth = 1.5 + beatGlow;
-
-                        // Base shape
-                        ctx.beginPath();
-                        ctx.moveTo(b1.x, b1.y);
-                        ctx.lineTo(b2.x, b2.y);
-                        ctx.lineTo(b3.x, b3.y);
-                        ctx.lineTo(b4.x, b4.y);
-                        ctx.closePath();
-                        ctx.stroke();
-
-                        // Base to Peak struts
-                        ctx.beginPath();
-                        ctx.moveTo(b1.x, b1.y); ctx.lineTo(peak.x, peak.y);
-                        ctx.moveTo(b2.x, b2.y); ctx.lineTo(peak.x, peak.y);
-                        ctx.moveTo(b3.x, b3.y); ctx.lineTo(peak.x, peak.y);
-                        ctx.moveTo(b4.x, b4.y); ctx.lineTo(peak.x, peak.y);
-                        ctx.stroke();
-                    }
-                } else if (item.type === 'tower') {
-                    // Draw neon skyscraper towers
-                    const halfW = item.width / 2;
-                    const b1 = project3D(item.x - halfW, 0, item.z);
-                    const b2 = project3D(item.x + halfW, 0, item.z);
-                    const t1 = project3D(item.x - halfW, item.height, item.z);
-                    const t2 = project3D(item.x + halfW, item.height, item.z);
-
-                    if (b1 && b2 && t1 && t2) {
-                        ctx.strokeStyle = item.color;
-                        ctx.shadowColor = item.color;
-                        ctx.shadowBlur = 4 + beatGlow * 5;
-                        ctx.lineWidth = 1.5 + beatGlow;
-
-                        ctx.beginPath();
-                        ctx.moveTo(b1.x, b1.y);
-                        ctx.lineTo(b2.x, b2.y);
-                        ctx.lineTo(t2.x, t2.y);
-                        ctx.lineTo(t1.x, t1.y);
-                        ctx.closePath();
-                        ctx.stroke();
-
-                        // Horizontal interior glowing stripes
-                        const divisionCount = 3;
-                        for (let d = 1; d < divisionCount; d++) {
-                            const ratio = d / divisionCount;
-                            const hL = item.height * ratio;
-                            const ptLeft = project3D(item.x - halfW, hL, item.z);
-                            const ptRight = project3D(item.x + halfW, hL, item.z);
-                            if (ptLeft && ptRight) {
-                                ctx.beginPath();
-                                ctx.moveTo(ptLeft.x, ptLeft.y);
-                                ctx.lineTo(ptRight.x, ptRight.y);
-                                ctx.stroke();
-                            }
-                        }
-                    }
-                }
-                ctx.shadowBlur = 0;
-            });
-
-            // Obstacles 3D rendering
-            obstacles.forEach(obs => {
-                const zDist = Math.abs(obs.z - cameraZ);
-                const progress = Math.max(0, 1 - (zDist / HORIZON_LIMIT));
-
-                // Vertices for front/back faces of the obstacle cube box
-                const hw = obs.width / 2;
-                const hh = obs.height / 2;
-                const hd = obs.depth / 2;
-
-                const localBox = [
-                    { x: -hw, y: -hh, z: -hd }, { x: hw, y: -hh, z: -hd },
-                    { x: hw, y: hh, z: -hd }, { x: -hw, y: hh, z: -hd },
-                    { x: -hw, y: -hh, z: hd }, { x: hw, y: -hh, z: hd },
-                    { x: hw, y: hh, z: hd }, { x: -hw, y: hh, z: hd }
-                ];
-
-                const screenPts = localBox.map(v => project3D(obs.x + v.x, obs.y + v.y, obs.z + v.z));
-                if (screenPts.some(pt => pt === null)) return;
-
-                // Color based on damage health state
-                const flash = obs.health < 20 ? 'rgba(239, 68, 68, 0.45)' : 'rgba(255, 0, 127, 0.3)';
-
-                // Draw front panel solid fill
-                ctx.fillStyle = flash;
-                ctx.beginPath();
-                ctx.moveTo(screenPts[0].x, screenPts[0].y);
-                ctx.lineTo(screenPts[1].x, screenPts[1].y);
-                ctx.lineTo(screenPts[2].x, screenPts[2].y);
-                ctx.lineTo(screenPts[3].x, screenPts[3].y);
-                ctx.closePath();
-                ctx.fill();
-
-                // Outer wireframe glowing structural outlines
-                ctx.lineWidth = Math.max(1, screenPts[0].scale * 0.08);
-                ctx.strokeStyle = '#ef4444';
-                ctx.shadowColor = '#ef4444';
-                ctx.shadowBlur = 6;
-
-                // Loop borders back face
-                ctx.beginPath();
-                ctx.moveTo(screenPts[4].x, screenPts[4].y);
-                ctx.lineTo(screenPts[5].x, screenPts[5].y);
-                ctx.lineTo(screenPts[6].x, screenPts[6].y);
-                ctx.lineTo(screenPts[7].x, screenPts[7].y);
-                ctx.closePath();
-
-                // Connecting struts front to back
-                for (let j = 0; j < 4; j++) {
-                    ctx.moveTo(screenPts[j].x, screenPts[j].y);
-                    ctx.lineTo(screenPts[j+4].x, screenPts[j+4].y);
-                }
-                
-                // Front face loops
-                ctx.moveTo(screenPts[0].x, screenPts[0].y);
-                ctx.lineTo(screenPts[1].x, screenPts[1].y);
-                ctx.lineTo(screenPts[2].x, screenPts[2].y);
-                ctx.lineTo(screenPts[3].x, screenPts[3].y);
-                ctx.closePath();
-
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-            });
-
-            // Energy Crystals Core (3D rotating wireframe octahedrons)
-            crystals.forEach(cry => {
-                // Model points for octahedrons (6 points)
-                const d = cry.size;
-                let vertices = [
-                    { x: 0, y: d, z: 0 },    // Top
-                    { x: 0, y: -d, z: 0 },   // Bottom
-                    { x: -d, y: 0, z: 0 },   // Left
-                    { x: d, y: 0, z: 0 },    // Right
-                    { x: 0, y: 0, z: -d },   // Front
-                    { x: 0, y: 0, z: d }     // Back
-                ];
-
-                // Rotations
-                vertices = vertices.map(v => rotate3D_Y(v, cry.rotationAngle));
-                vertices = vertices.map(v => rotate3D_X(v, cry.rotationAngle * 0.5));
-
-                const screenPts = vertices.map(v => project3D(cry.x + v.x, cry.y + v.y, cry.z + v.z));
-                if (screenPts.some(pt => pt === null)) return;
-
-                // Fill translucent vector shapes
-                ctx.fillStyle = 'rgba(0, 243, 255, 0.4)';
-                ctx.beginPath();
-                // Face 1
-                ctx.moveTo(screenPts[0].x, screenPts[0].y);
-                ctx.lineTo(screenPts[2].x, screenPts[2].y);
-                ctx.lineTo(screenPts[4].x, screenPts[4].y);
-                ctx.closePath();
-                ctx.fill();
-
-                ctx.beginPath();
-                // Face 2
-                ctx.moveTo(screenPts[0].x, screenPts[0].y);
-                ctx.lineTo(screenPts[3].x, screenPts[3].y);
-                ctx.lineTo(screenPts[4].x, screenPts[4].y);
-                ctx.closePath();
-                ctx.fill();
-
-                // Frame wire outline drawing
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = '#00f3ff';
-                ctx.shadowColor = '#00f3ff';
-                ctx.shadowBlur = 8;
-                ctx.beginPath();
-
-                // Top pyramids edges
-                for (let k = 2; k <= 5; k++) {
-                    ctx.moveTo(screenPts[0].x, screenPts[0].y);
-                    ctx.lineTo(screenPts[k].x, screenPts[k].y);
-                    ctx.moveTo(screenPts[1].x, screenPts[1].y);
-                    ctx.lineTo(screenPts[k].x, screenPts[k].y);
-                }
-                // Center diamond rings
-                ctx.moveTo(screenPts[2].x, screenPts[2].y);
-                ctx.lineTo(screenPts[4].x, screenPts[4].y);
-                ctx.lineTo(screenPts[3].x, screenPts[3].y);
-                ctx.lineTo(screenPts[5].x, screenPts[5].y);
-                ctx.closePath();
-
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-            });
-
-            // Render Lasers (Glow tubes)
-            lasers.forEach(l => {
-                const ptStart = project3D(l.x, l.y, l.z);
-                const ptEnd = project3D(l.x, l.y, l.z - 3);
-
-                if (ptStart && ptEnd) {
-                    ctx.lineWidth = Math.max(2, ptStart.scale * 0.1);
-                    ctx.strokeStyle = '#00f3ff';
-                    ctx.shadowColor = '#00f3ff';
-                    ctx.shadowBlur = 10;
-                    ctx.beginPath();
-                    ctx.moveTo(ptStart.x, ptStart.y);
-                    ctx.lineTo(ptEnd.x, ptEnd.y);
-                    ctx.stroke();
-                    ctx.shadowBlur = 0;
-                }
-            });
-
-            // Particles 3D explosions
-            particles.forEach(p => {
-                const pt = project3D(p.x, p.y, p.z);
-                if (pt) {
-                    const ratio = p.life / p.maxLife;
-                    ctx.fillStyle = p.color;
-                    ctx.globalAlpha = ratio;
-                    const size = Math.max(1.5, pt.scale * 0.1 * ratio);
-                    ctx.fillRect(pt.x - size/2, pt.y - size/2, size, size);
-                }
-            });
-            ctx.globalAlpha = 1.0; // Reset transparency
-        }
-
-        /* Game States logic and transitions */
-        let lastTime = 0;
-
-        function gameLoop(timestamp) {
-            if (!lastTime) lastTime = timestamp;
-            const dt = Math.min((timestamp - lastTime) / 1000, 0.1); // Clamp limit
-            lastTime = timestamp;
-
-            // Decay audio-reactive beat glow pulse
-            beatGlow = Math.max(0, beatGlow - dt * 3.0);
-
-            // Black clear backdrop (safe HEX code for canvas compiler engines)
-            ctx.fillStyle = '#050515';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Horizon gradient glow
-            const grad = ctx.createLinearGradient(0, canvas.height/2, 0, canvas.height);
-            grad.addColorStop(0, 'rgba(112, 0, 255, 0.15)');
-            grad.addColorStop(1, '#050515');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, canvas.height/2, canvas.width, canvas.height/2);
-
-            if (currentGameState === GAME_STATES.PLAYING) {
-                // Update and draw
-                updateEntities(dt);
-                drawHighway();
-                drawEntities();
-                drawPlayerShip();
-            } else {
-                // Idle demo movement during menus
-                updateStarfield(dt, 5.0);
-                drawHighway();
-                drawEntities();
-
-                // Animate idle ship drifting calmly
-                const idleWave = Math.sin(timestamp * 0.003) * 0.6;
-                shipX = idleWave;
-                shipTiltRoll = Math.sin(timestamp * 0.002) * 0.15;
-                shipTiltYaw = Math.cos(timestamp * 0.002) * 0.08;
-                drawPlayerShip();
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Window resize canvas adaptor
-        function handleResize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', handleResize);
-
-        /* Actions & Navigation Interface logic */
-        function bindUI() {
-            // Main play launcher
-            document.getElementById('btn-play').addEventListener('click', () => {
-                startGame();
-            });
-
-            // Upgrades panel toggler
-            document.getElementById('btn-garage').addEventListener('click', () => {
-                showPanel('garage-menu');
-            });
-            document.getElementById('btn-close-garage').addEventListener('click', () => {
-                showPanel('start-menu');
-            });
-
-            // Settings panel triggers
-            document.getElementById('btn-settings').addEventListener('click', () => {
-                showPanel('settings-menu');
-            });
-            document.getElementById('btn-quick-settings').addEventListener('click', () => {
-                if (currentGameState === GAME_STATES.MENU) {
-                    showPanel('settings-menu');
-                }
-            });
-            document.getElementById('btn-close-settings').addEventListener('click', () => {
-                showPanel('start-menu');
-            });
-
-            // Game over screen redirection
-            document.getElementById('btn-restart').addEventListener('click', () => {
-                startGame();
-            });
-            document.getElementById('btn-go-hangar').addEventListener('click', () => {
-                showPanel('garage-menu');
-            });
-
-            // Sound Toggle buttons
-            const audioCheck = document.getElementById('setting-audio');
-            audioCheck.addEventListener('change', (e) => {
-                audioSynth.enabled = e.target.checked;
-                updateAudioUIState();
-            });
-
-            document.getElementById('btn-sound-toggle').addEventListener('click', () => {
-                audioSynth.enabled = !audioSynth.enabled;
-                audioCheck.checked = audioSynth.enabled;
-                updateAudioUIState();
-            });
-
-            // Cam settings toggle
-            document.getElementById('setting-cam').addEventListener('change', (e) => {
-                gameConfig.cameraTilt = e.target.checked;
-            });
-
-            // Difficulty switches
-            const diffButtons = [
-                document.getElementById('diff-0'),
-                document.getElementById('diff-1'),
-                document.getElementById('diff-2')
-            ];
-            diffButtons.forEach((btn, idx) => {
-                btn.addEventListener('click', () => {
-                    gameConfig.difficulty = idx;
-                    diffButtons.forEach((b, i) => {
-                        if (i === idx) b.classList.add('active');
-                        else b.classList.remove('active');
-                    });
-                });
-            });
-
-            // Upgrade purchase operations
-            document.getElementById('buy-engine').addEventListener('click', () => purchaseUpgrade('engine'));
-            document.getElementById('buy-shield').addEventListener('click', () => purchaseUpgrade('shield'));
-            document.getElementById('buy-weapon').addEventListener('click', () => purchaseUpgrade('weapon'));
-
-            // Navigation drift bindings (Keyboard)
-            window.addEventListener('keydown', (e) => {
-                if (currentGameState !== GAME_STATES.PLAYING) return;
-                if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-                    shiftLane(-1);
-                }
-                if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-                    shiftLane(1);
-                }
-                if (e.key === ' ' || e.key === 'Spacebar') {
-                    fireLaser();
-                }
-            });
-
-            // Touch mobile actions
-            document.getElementById('touch-left').addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                shiftLane(-1);
-            });
-            document.getElementById('touch-right').addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                shiftLane(1);
-            });
-            document.getElementById('touch-shoot').addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                if (currentGameState === GAME_STATES.PLAYING) fireLaser();
+            s.legPhase += s.speed * 10;
+        });
+    }
+
+
+const engine = new ChessEngine();
+const ai = new ChessAI(engine);
+
+let playerColor = 'w';
+let selectedSq = null;
+let validMoveTargets = [];
+let lastMove = null;
+let isGameOver = false;
+let pendingPromo = null;
+
+let whiteSeconds = 300, blackSeconds = 300;
+let clockInterval = null;
+
+const cam = {
+    yaw: 0,
+    pitch: 0.85,
+    distance: 14.0,
+    targetYaw: 0,
+    targetPitch: 0.85,
+    targetDist: 14.0
+};
+
+let isDragging = false;
+let lastMouse = { x: 0, y: 0 };
+let dragDistance = 0;
+
+function squareToCoord(idx) {
+    let r = Math.floor(idx / 8), c = idx % 8;
+    return [c - 3.5, 0.1, r - 3.5];
+}
+
+let animatedPieces = [];
+
+function syncPieces() {
+    animatedPieces = [];
+    for (let i = 0; i < 64; i++) {
+        let p = engine.board[i];
+        if (p) {
+            let pos = squareToCoord(i);
+            animatedPieces.push({
+                idx: i,
+                type: p.type,
+                color: p.color === 'w' ? PALETTE.whitePiece : PALETTE.blackPiece,
+                x: pos[0], y: pos[1], z: pos[2],
+                progress: 1.0
             });
         }
+    }
+}
+syncPieces();
 
-        function shiftLane(dir) {
-            let next = targetLane + dir;
-            if (next >= -1 && next <= 1) {
-                targetLane = next;
+function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+
+    // On narrow portrait screens, pull camera back to maintain full board visibility
+    const isPortrait = window.innerHeight > window.innerWidth;
+    const baseDist = isPortrait ? 18.0 : 14.0;
+    if (Math.abs(cam.targetDist - 14.0) < 0.5 || Math.abs(cam.targetDist - 18.0) < 0.5) {
+        cam.targetDist = baseDist;
+    }
+}
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 150));
+resizeCanvas();
+
+function unproject(screenX, screenY, depth, invVP) {
+    let nx = (screenX / window.innerWidth) * 2 - 1;
+    let ny = 1 - (screenY / window.innerHeight) * 2;
+    let nz = depth * 2 - 1;
+    let v = [nx, ny, nz, 1.0];
+    let res = [
+        invVP[0]*v[0] + invVP[4]*v[1] + invVP[8]*v[2] + invVP[12]*v[3],
+        invVP[1]*v[0] + invVP[5]*v[1] + invVP[9]*v[2] + invVP[13]*v[3],
+        invVP[2]*v[0] + invVP[6]*v[1] + invVP[10]*v[2] + invVP[14]*v[3],
+        invVP[3]*v[0] + invVP[7]*v[1] + invVP[11]*v[2] + invVP[15]*v[3]
+    ];
+    return [res[0] / res[3], res[1] / res[3], res[2] / res[3]];
+}
+
+function raycastSquare(clientX, clientY) {
+    let rect = canvas.getBoundingClientRect();
+    let mx = clientX - rect.left, my = clientY - rect.top;
+
+    let aspect = canvas.width / canvas.height;
+    let proj = Math3D.mat4.perspective(Math3D.mat4.create(), 45 * Math.PI / 180, aspect, 0.1, 100);
+
+    let eyeY = Math.sin(cam.pitch) * cam.distance;
+    let eyeX = Math.cos(cam.pitch) * Math.sin(cam.yaw) * cam.distance;
+    let eyeZ = Math.cos(cam.pitch) * Math.cos(cam.yaw) * cam.distance;
+    let view = Math3D.mat4.lookAt(Math3D.mat4.create(), [eyeX, eyeY, eyeZ], [0, 0, 0], [0, 1, 0]);
+
+    let vp = Math3D.mat4.multiply(Math3D.mat4.create(), proj, view);
+    let invVP = Math3D.mat4.invert(Math3D.mat4.create(), vp);
+    if (!invVP) return null;
+
+    let pNear = unproject(mx, my, 0, invVP);
+    let pFar = unproject(mx, my, 1, invVP);
+
+    let dy = pFar[1] - pNear[1];
+    if (Math.abs(dy) < 0.0001) return null;
+
+    let t = (0.1 - pNear[1]) / dy;
+    let hitX = pNear[0] + t * (pFar[0] - pNear[0]);
+    let hitZ = pNear[2] + t * (pFar[2] - pNear[2]);
+
+    let col = Math.floor(hitX + 4.0);
+    let row = Math.floor(hitZ + 4.0);
+
+    if (col >= 0 && col <= 7 && row >= 0 && row <= 7) {
+        return row * 8 + col;
+    }
+    return null;
+}
+
+/* Mouse and Touch Camera Orbit Listeners with Mobile Touch Calibration */
+
+let touchStartTime = 0;
+let touchStartX = 0, touchStartY = 0;
+
+canvas.addEventListener('mousedown', e => {
+    isDragging = true;
+    dragDistance = 0;
+    lastMouse = { x: e.clientX, y: e.clientY };
+});
+/*
+window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    let dx = e.clientX - lastMouse.x;
+    let dy = e.clientY - lastMouse.y;
+    dragDistance += Math.hypot(dx, dy);
+    lastMouse = { x: e.clientX, y: e.clientY };
+
+    cam.targetYaw -= dx * 0.008;
+    cam.targetPitch += dy * 0.008;
+    cam.targetPitch = Math.max(0.2, Math.min(Math.PI / 2 - 0.05, cam.targetPitch));
+});
+*/
+window.addEventListener('mouseup', e => {
+    if (isDragging && dragDistance < 6) {
+        onBoardClick(e.clientX, e.clientY);
+    }
+    isDragging = false;
+});
+
+canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    cam.targetDist += e.deltaY * 0.01;
+    cam.targetDist = Math.max(6, Math.min(26, cam.targetDist));
+}, { passive: false });
+
+let touchStartDist = 0;
+canvas.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+        isDragging = true;
+        dragDistance = 0;
+        touchStartTime = performance.now();
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        lastMouse = { x: touchStartX, y: touchStartY };
+    } else if (e.touches.length === 2) {
+        touchStartDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+    }
+}, { passive: true });
+/*
+canvas.addEventListener('touchmove', e => {
+    if (e.touches.length === 1 && isDragging) {
+        let dx = e.touches[0].clientX - lastMouse.x;
+        let dy = e.touches[0].clientY - lastMouse.y;
+        dragDistance += Math.hypot(dx, dy);
+        lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+
+        cam.targetYaw -= dx * 0.008;
+        cam.targetPitch += dy * 0.008;
+        cam.targetPitch = Math.max(0.2, Math.min(Math.PI / 2 - 0.05, cam.targetPitch));
+    } else if (e.touches.length === 2) {
+        let currentDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        let delta = touchStartDist - currentDist;
+        cam.targetDist += delta * 0.02;
+        cam.targetDist = Math.max(6, Math.min(26, cam.targetDist));
+        touchStartDist = currentDist;
+    }
+}, { passive: true });
+*/
+canvas.addEventListener('touchend', e => {
+    if (isDragging && e.changedTouches.length > 0) {
+        const touch = e.changedTouches[0];
+        const elapsed = performance.now() - touchStartTime;
+        const totalDist = Math.hypot(touch.clientX - touchStartX, touch.clientY - touchStartY);
+
+        // Mobile tap tolerance: reliable finger taps even with minor micro-movements
+        if (totalDist < 16 && elapsed < 450) {
+            onBoardClick(touch.clientX, touch.clientY);
+        }
+    }
+    isDragging = false;
+});
+
+function onBoardClick(clientX, clientY) {
+    if (isGameOver || engine.turn !== playerColor) return;
+    const sq = raycastSquare(clientX, clientY);
+    if (sq === null) {
+        selectedSq = null;
+        validMoveTargets = [];
+        return;
+    }
+
+    const move = validMoveTargets.find(m => m.to === sq);
+    if (move) {
+        if (move.type.startsWith('promotion')) {
+            pendingPromo = move;
+            document.getElementById('promotion-dialog').classList.add('show');
+            return;
+        }
+        makePlayerMove(move);
+    } else {
+        const piece = engine.board[sq];
+        if (piece && piece.color === playerColor) {
+            selectedSq = sq;
+            playTone('select');
+            validMoveTargets = engine.getLegalMoves().filter(m => m.from === sq);
+        } else {
+            selectedSq = null;
+            validMoveTargets = [];
+        }
+    }
+}
+
+document.querySelectorAll('.promo-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (pendingPromo) {
+            pendingPromo.promo = btn.dataset.piece;
+            document.getElementById('promotion-dialog').classList.remove('show');
+            makePlayerMove(pendingPromo);
+            pendingPromo = null;
+        }
+    });
+});
+
+function makePlayerMove(move) {
+    applyMove(move);
+    if (!isGameOver && engine.turn !== playerColor) {
+        triggerAIMove();
+    }
+}
+
+function triggerAIMove() {
+    const indicator = document.getElementById('ai-indicator');
+    indicator.style.display = 'flex';
+    let diff = parseInt(document.getElementById('difficulty-select').value);
+    setTimeout(() => {
+        const aiMove = ai.getBestMove(diff);
+        indicator.style.display = 'none';
+        if (aiMove) applyMove(aiMove);
+        else evaluateEndCondition();
+    }, 120);
+}
+
+function applyMove(move) {
+    let startPos = squareToCoord(move.from);
+    let endPos = squareToCoord(move.to);
+    let piece = engine.board[move.from];
+
+    if (move.captured || move.type === 'en_passant') {
+        let capSq = move.type === 'en_passant' ? move.to + (piece.color === 'w' ? 8 : -8) : move.to;
+        animatedPieces = animatedPieces.filter(p => p.idx !== capSq);
+        playTone('capture');
+    } else {
+        playTone('move');
+    }
+
+    let ap = animatedPieces.find(p => p.idx === move.from);
+    if (ap) {
+        ap.sx = startPos[0]; ap.sy = startPos[1]; ap.sz = startPos[2];
+        ap.tx = endPos[0]; ap.ty = endPos[1]; ap.tz = endPos[2];
+        ap.progress = 0;
+        ap.idx = move.to;
+        if (move.promo) ap.type = move.promo;
+    }
+
+    if (move.type === 'castling') {
+        let rF, rT;
+        if (move.to === 62) { rF = 63; rT = 61; }
+        else if (move.to === 58) { rF = 56; rT = 59; }
+        else if (move.to === 6) { rF = 7; rT = 5; }
+        else if (move.to === 2) { rF = 0; rT = 3; }
+        let rap = animatedPieces.find(p => p.idx === rF);
+        if (rap) {
+            let sC = squareToCoord(rF), tC = squareToCoord(rT);
+            rap.sx = sC[0]; rap.sy = sC[1]; rap.sz = sC[2];
+            rap.tx = tC[0]; rap.ty = tC[1]; rap.tz = tC[2];
+            rap.progress = 0;
+            rap.idx = rT;
+        }
+    }
+
+    engine.makeMove(move);
+    lastMove = { from: move.from, to: move.to };
+    selectedSq = null;
+    validMoveTargets = [];
+    document.getElementById('btn-undo').disabled = false;
+
+    updateUI();
+    evaluateEndCondition();
+}
+
+function updateUI() {
+    const wClock = document.getElementById('white-clock');
+    const bClock = document.getElementById('black-clock');
+    const mWClock = document.getElementById('mobile-white-clock');
+    const mBClock = document.getElementById('mobile-black-clock');
+    const mStatusPill = document.getElementById('mobile-status-pill');
+
+    if (engine.turn === 'w') {
+        wClock.classList.add('active');
+        bClock.classList.remove('active');
+        if (mWClock) { mWClock.classList.add('active'); mBClock.classList.remove('active'); }
+        if (mStatusPill) mStatusPill.innerText = "White's turn";
+    } else {
+        bClock.classList.add('active');
+        wClock.classList.remove('active');
+        if (mBClock) { mBClock.classList.add('active'); mWClock.classList.remove('active'); }
+        if (mStatusPill) mStatusPill.innerText = "Black's turn";
+    }
+
+    const subStatus = document.getElementById('sub-status');
+    if (engine.isKingInCheck(engine.turn)) {
+        playTone('check');
+        subStatus.innerText = `${engine.turn === 'w' ? 'White' : 'Black'} is in CHECK!`;
+        subStatus.style.color = '#ef4444';
+        subStatus.style.fontWeight = 'bold';
+        if (mStatusPill) {
+            mStatusPill.innerText = "CHECK!";
+            mStatusPill.style.color = '#ef4444';
+        }
+    } else {
+        subStatus.innerText = `${engine.turn === 'w' ? 'White' : 'Black'}'s move`;
+        subStatus.style.color = 'var(--text-muted)';
+        subStatus.style.fontWeight = 'normal';
+        if (mStatusPill) mStatusPill.style.color = 'var(--text-muted)';
+    }
+
+    const glyphs = { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛' };
+    const wCapEl = document.getElementById('white-captured');
+    const bCapEl = document.getElementById('black-captured');
+    wCapEl.innerHTML = engine.capturedBlack.map(t => `<span title="${t}">${glyphs[t]||t}</span>`).join(' ');
+    bCapEl.innerHTML = engine.capturedWhite.map(t => `<span title="${t}">${glyphs[t]||t}</span>`).join(' ');
+
+    const vals = { p: 1, n: 3, b: 3, r: 5, q: 9 };
+    let wScore = engine.capturedBlack.reduce((acc, t) => acc + (vals[t] || 0), 0);
+    let bScore = engine.capturedWhite.reduce((acc, t) => acc + (vals[t] || 0), 0);
+    const wDiff = wScore > bScore ? `+${wScore - bScore}` : '';
+    const bDiff = bScore > wScore ? `+${bScore - wScore}` : '';
+    document.getElementById('white-score').innerText = wDiff;
+    document.getElementById('black-score').innerText = bDiff;
+    const mWS = document.getElementById('mobile-white-score');
+    const mBS = document.getElementById('mobile-black-score');
+    if (mWS) mWS.innerText = wDiff;
+    if (mBS) mBS.innerText = bDiff;
+}
+
+function evaluateEndCondition() {
+    const legal = engine.getLegalMoves();
+    if (legal.length === 0) {
+        isGameOver = true;
+        clearInterval(clockInterval);
+        const overlay = document.getElementById('status-overlay');
+        const stText = document.getElementById('status-text');
+        const stDetail = document.getElementById('status-detail');
+        overlay.classList.add('show');
+
+        if (engine.isKingInCheck(engine.turn)) {
+            const winner = engine.turn === 'w' ? 'Black' : 'White';
+            stText.innerText = 'Checkmate!';
+            stDetail.innerText = `${winner} captures the arachnid realm and wins the game!`;
+        } else {
+            stText.innerText = 'Stalemate!';
+            stDetail.innerText = 'Neither side can advance. The battle concludes in a draw.';
+        }
+    }
+}
+
+function formatClock(sec) {
+    let m = Math.floor(sec / 60);
+    let s = sec % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+function startClocks() {
+    clearInterval(clockInterval);
+    const limit = parseInt(document.getElementById('time-control').value);
+    const mWClock = document.getElementById('mobile-white-clock');
+    const mBClock = document.getElementById('mobile-black-clock');
+
+    if (limit === 0) {
+        document.getElementById('white-clock').innerText = 'Casual';
+        document.getElementById('black-clock').innerText = 'Casual';
+        if (mWClock) mWClock.innerText = 'Casual';
+        if (mBClock) mBClock.innerText = 'Casual';
+        return;
+    }
+    whiteSeconds = limit;
+    blackSeconds = limit;
+    const initialFormatted = formatClock(limit);
+    document.getElementById('white-clock').innerText = initialFormatted;
+    document.getElementById('black-clock').innerText = initialFormatted;
+    if (mWClock) mWClock.innerText = initialFormatted;
+    if (mBClock) mBClock.innerText = initialFormatted;
+
+    clockInterval = setInterval(() => {
+        if (isGameOver) return;
+        if (engine.turn === 'w') {
+            whiteSeconds--;
+            const f = formatClock(Math.max(0, whiteSeconds));
+            document.getElementById('white-clock').innerText = f;
+            if (mWClock) mWClock.innerText = f;
+            if (whiteSeconds <= 30) {
+                document.getElementById('white-clock').classList.add('danger');
+                if (mWClock) mWClock.classList.add('danger');
             }
-        }
-
-        function showPanel(panelId) {
-            document.getElementById('start-menu').classList.add('hidden');
-            document.getElementById('garage-menu').classList.add('hidden');
-            document.getElementById('gameover-menu').classList.add('hidden');
-            document.getElementById('settings-menu').classList.add('hidden');
-
-            if (panelId) {
-                document.getElementById(panelId).classList.remove('hidden');
-                document.getElementById('center-menus').classList.remove('hidden');
-            } else {
-                document.getElementById('center-menus').classList.add('hidden');
+            if (whiteSeconds <= 0) handleTimeOut('Black');
+        } else {
+            blackSeconds--;
+            const f = formatClock(Math.max(0, blackSeconds));
+            document.getElementById('black-clock').innerText = f;
+            if (mBClock) mBClock.innerText = f;
+            if (blackSeconds <= 30) {
+                document.getElementById('black-clock').classList.add('danger');
+                if (mBClock) mBClock.classList.add('danger');
             }
+            if (blackSeconds <= 0) handleTimeOut('White');
         }
+    }, 1000);
+}
 
-        function updateAudioUIState() {
-            const svgIcon = document.getElementById('sound-icon-svg');
-            if (audioSynth.enabled) {
-                svgIcon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>`;
-                svgIcon.style.color = "var(--text-light)";
-                if (currentGameState === GAME_STATES.PLAYING) {
-                    audioSynth.startSynthwaveBeat();
-                }
-            } else {
-                svgIcon.innerHTML = `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>`;
-                svgIcon.style.color = "var(--slate-400)";
-                audioSynth.stopSynthwaveBeat();
-            }
+function handleTimeOut(winner) {
+    isGameOver = true;
+    clearInterval(clockInterval);
+    const overlay = document.getElementById('status-overlay');
+    document.getElementById('status-text').innerText = 'Time Out!';
+    document.getElementById('status-detail').innerText = `${winner} wins on clock expiration!`;
+    overlay.classList.add('show');
+}
+
+function render() {
+    cam.yaw += (cam.targetYaw - cam.yaw) * 0.08;
+    cam.pitch += (cam.targetPitch - cam.pitch) * 0.08;
+    cam.distance += (cam.targetDist - cam.distance) * 0.08;
+
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clearColor(0.04, 0.05, 0.07, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
+
+    const aspect = canvas.width / canvas.height;
+    const projMat = Math3D.mat4.perspective(Math3D.mat4.create(), 45 * Math.PI / 180, aspect, 0.1, 100.0);
+
+    const cy = Math.sin(cam.pitch) * cam.distance;
+    const cx = Math.cos(cam.pitch) * Math.sin(cam.yaw) * cam.distance;
+    const cz = Math.cos(cam.pitch) * Math.cos(cam.yaw) * cam.distance;
+    const viewMat = Math3D.mat4.lookAt(Math3D.mat4.create(), [cx, cy, cz], [0, 0, 0], [0, 1, 0]);
+
+    gl.useProgram(pInfo.program);
+    gl.uniformMatrix4fv(pInfo.uniforms.proj, false, projMat);
+
+    const drawMesh = (buf, pos, color, state = 0, rotY = 0, scale = [1,1,1], rotX = 0, rotZ = 0) => {
+        let mv = Math3D.mat4.create();
+        Math3D.mat4.multiply(mv, viewMat, mv);
+        Math3D.mat4.translate(mv, mv, pos);
+        if (rotY !== 0) Math3D.mat4.rotateY(mv, mv, rotY);
+        if (rotX !== 0) Math3D.mat4.rotateX(mv, mv, rotX);
+        if (rotZ !== 0) Math3D.mat4.rotateZ(mv, mv, rotZ);
+        if (scale[0] !== 1 || scale[1] !== 1 || scale[2] !== 1) Math3D.mat4.scale(mv, mv, scale);
+
+        let normMat = Math3D.mat4.invert(Math3D.mat4.create(), mv);
+        Math3D.mat4.transpose(normMat, normMat);
+
+        gl.uniformMatrix4fv(pInfo.uniforms.mv, false, mv);
+        gl.uniformMatrix4fv(pInfo.uniforms.norm, false, normMat);
+        gl.uniform4fv(pInfo.uniforms.color, color);
+        gl.uniform1i(pInfo.uniforms.state, state);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf.pos);
+        gl.vertexAttribPointer(pInfo.attribs.pos, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(pInfo.attribs.pos);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf.norm);
+        gl.vertexAttribPointer(pInfo.attribs.norm, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(pInfo.attribs.norm);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buf.ind);
+        gl.drawElements(gl.TRIANGLES, buf.count, gl.UNSIGNED_SHORT, 0);
+    };
+
+    // Table / Crypt Floor
+    drawMesh(Models.table, [0, -0.15, 0], PALETTE.tableMat, 0);
+
+    // Chessboard Perimeter Frame
+    drawMesh(Models.border, [0, 0.04, 0], PALETTE.borderMat, 0);
+
+    let checkSq = -1;
+    if (engine.isKingInCheck(engine.turn)) {
+        checkSq = engine.board.findIndex(p => p && p.type === 'k' && p.color === engine.turn);
+    }
+
+    // Board Squares
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            let idx = r * 8 + c;
+            let isDark = (r + c) % 2 !== 0;
+            let baseCol = isDark ? PALETTE.sqDark : PALETTE.sqLight;
+
+            let st = 0;
+            if (idx === selectedSq) st = 1;
+            else if (validMoveTargets.some(m => m.to === idx)) st = 2;
+            else if (lastMove && (idx === lastMove.from || idx === lastMove.to)) st = 3;
+            else if (idx === checkSq) st = 4;
+
+            drawMesh(Models.square, [c - 3.5, 0.1, r - 3.5], baseCol, st);
         }
+    }
 
-        /* Local Data Persistence (Works 100% Offline) */
-        function loadData() {
-            try {
-                const raw = localStorage.getItem('retro_shooter_offline_v2');
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    gameConfig.totalCrystals = parsed.totalCrystals || 0;
-                    gameConfig.highScore = parsed.highScore || 0;
-                    gameConfig.engineLevel = parsed.engineLevel || 1;
-                    gameConfig.shieldLevel = parsed.shieldLevel || 1;
-                    gameConfig.weaponLevel = parsed.weaponLevel || 1;
-                }
-            } catch (e) {
-                console.warn("Could not retrieve local save:", e);
-            }
-            updateHUDElements();
-            updateGarageUI();
+    // Piece Animation Interpolation
+    for (let ap of animatedPieces) {
+        if (ap.progress < 1.0) {
+            ap.progress += 0.08;
+            if (ap.progress > 1.0) ap.progress = 1.0;
+            let t = ap.progress;
+            let ease = t * t * (3.0 - 2.0 * t);
+            ap.x = ap.sx + (ap.tx - ap.sx) * ease;
+            ap.z = ap.sz + (ap.tz - ap.sz) * ease;
+            let arc = Math.sin(t * Math.PI) * 1.2;
+            ap.y = ap.sy + (ap.ty - ap.sy) * ease + arc;
         }
+    }
 
-        function saveData() {
-            try {
-                const struct = {
-                    totalCrystals: gameConfig.totalCrystals,
-                    highScore: gameConfig.highScore,
-                    engineLevel: gameConfig.engineLevel,
-                    shieldLevel: gameConfig.shieldLevel,
-                    weaponLevel: gameConfig.weaponLevel
-                };
-                localStorage.setItem('retro_shooter_offline_v2', JSON.stringify(struct));
-            } catch (e) {
-                console.warn("Could not record local save:", e);
-            }
+    // Pieces
+    for (let ap of animatedPieces) {
+        let m = Models[PIECE_NAMES[ap.type]];
+        if (m) {
+            drawMesh(m, [ap.x, ap.y, ap.z], ap.color, ap.idx === selectedSq ? 1 : 0);
         }
+    }
 
-        function updateHUDElements() {
-            document.getElementById('hud-score').innerText = String(Math.floor(gameConfig.score)).padStart(5, '0');
-            document.getElementById('hud-highscore').innerText = String(Math.floor(gameConfig.highScore)).padStart(5, '0');
-            document.getElementById('hud-crystals').innerText = gameConfig.totalCrystals;
-            document.getElementById('shop-crystal-count').innerText = gameConfig.totalCrystals;
+    // Update Crawling Spiders (with perimeter bounce)
+    updateSpiders();
+    for (let s of spiders) {
+        let bobY = Math.abs(Math.sin(s.legPhase * 2.0)) * 0.03;
+        let rotY = s.angle + Math.PI;
 
-            // Shield health calculations
-            const pct = Math.max(0, Math.min(100, (gameConfig.shieldHealth / gameConfig.maxShieldHealth) * 100));
-            const bar = document.getElementById('hud-shield');
-            bar.style.width = `${pct}%`;
+        drawMesh(Models.spiderBody, [s.x, bobY, s.z], PALETTE.spiderChitin, 5, rotY, [s.scale, s.scale, s.scale]);
 
-            if (pct < 35) {
-                bar.style.background = "linear-gradient(90deg, #ef4444, var(--neon-pink))";
-            } else {
-                bar.style.background = "linear-gradient(90deg, var(--neon-cyan), #3b82f6)";
-            }
+        for (let l = 0; l < 4; l++) {
+            let zOff = (-0.14 + l * 0.09) * s.scale;
+            let legX = s.x + Math.sin(rotY) * zOff;
+            let legZ = s.z + Math.cos(rotY) * zOff;
 
-            const multiText = ["x1.0 Cruise", "x1.5 Hyper", "x2.0 Overdrive"];
-            document.getElementById('hud-multiplier').innerText = multiText[gameConfig.difficulty];
+            let phaseR = s.legPhase + (l % 2 === 0 ? 0 : Math.PI);
+            let rotXR = Math.cos(phaseR) * 0.35;
+            let liftR = Math.max(0, Math.sin(phaseR)) * 0.45;
+
+            let phaseL = s.legPhase + (l % 2 === 0 ? Math.PI : 0);
+            let rotXL = Math.cos(phaseL) * 0.35;
+            let liftL = Math.max(0, Math.sin(phaseL)) * 0.45;
+
+            drawMesh(Models.spiderLegR, [legX, bobY, legZ], PALETTE.spiderChitin, 5, rotY, [s.scale, s.scale, s.scale], rotXR, liftR);
+            drawMesh(Models.spiderLegL, [legX, bobY, legZ], PALETTE.spiderChitin, 5, rotY, [s.scale, s.scale, s.scale], rotXL, -liftL);
         }
+    }
 
-        function updateGarageUI() {
-            const baseCost = 20;
-            const engineCost = baseCost * gameConfig.engineLevel;
-            const shieldCost = baseCost * gameConfig.shieldLevel;
-            const weaponCost = baseCost * gameConfig.weaponLevel;
+    requestAnimationFrame(render);
+}
 
-            document.getElementById('engine-cost').innerText = gameConfig.engineLevel >= 5 ? "MAX" : engineCost;
-            document.getElementById('shield-cost').innerText = gameConfig.shieldLevel >= 5 ? "MAX" : shieldCost;
-            document.getElementById('weapon-cost').innerText = gameConfig.weaponLevel >= 5 ? "MAX" : weaponCost;
+function startNewGame() {
+    engine.reset();
+    isGameOver = false;
+    selectedSq = null;
+    validMoveTargets = [];
+    lastMove = null;
+    document.getElementById('status-overlay').classList.remove('show');
+    document.getElementById('btn-undo').disabled = true;
 
-            updateUpgradeButton('buy-engine', gameConfig.engineLevel, engineCost);
-            updateUpgradeButton('buy-shield', gameConfig.shieldLevel, shieldCost);
-            updateUpgradeButton('buy-weapon', gameConfig.weaponLevel, weaponCost);
+    playerColor = document.getElementById('player-color').value;
 
-            drawLevelDots('engine-lvl-dots', gameConfig.engineLevel);
-            drawLevelDots('shield-lvl-dots', gameConfig.shieldLevel);
-            drawLevelDots('weapon-lvl-dots', gameConfig.weaponLevel);
-        }
+    // Update role tags
+    const wLabel = document.getElementById('white-label');
+    const bLabel = document.getElementById('black-label');
+    const mWLabel = document.getElementById('mobile-white-label');
+    const mBLabel = document.getElementById('mobile-black-label');
 
-        function updateUpgradeButton(btnId, level, cost) {
-            const btn = document.getElementById(btnId);
-            if (level >= 5) {
-                btn.disabled = true;
-                btn.innerHTML = "<span>MAXED</span>";
-            } else {
-                const canAfford = gameConfig.totalCrystals >= cost;
-                btn.disabled = false;
-                btn.innerHTML = `<span>UPGRADE</span><span><svg viewBox="0 0 24 24" width="8" height="8" fill="none" stroke="currentColor" style="display:inline; vertical-align:middle; margin-right:2px;"><path d="M6 3h12l4 6-10 13L2 9z"></path></svg> ${cost}</span>`;
-            }
-        }
+    if (playerColor === 'b') {
+        wLabel.innerHTML = `White (Spider AI)`;
+        bLabel.innerHTML = `Black (Player)`;
+        if (mWLabel) mWLabel.innerText = 'White (AI)';
+        if (mBLabel) mBLabel.innerText = 'Black (You)';
+        cam.targetYaw = Math.PI; // Rotate camera 180° to Black's perspective
+    } else {
+        wLabel.innerHTML = `White (Player)`;
+        bLabel.innerHTML = `Black (Spider AI)`;
+        if (mWLabel) mWLabel.innerText = 'White (You)';
+        if (mBLabel) mBLabel.innerText = 'Black (AI)';
+        cam.targetYaw = 0;       // White perspective
+    }
 
-        function drawLevelDots(containerId, level) {
-            const container = document.getElementById(containerId);
-            const pips = container.children;
-            for (let i = 0; i < pips.length; i++) {
-                if (i < level) {
-                    pips[i].classList.add('active');
-                } else {
-                    pips[i].classList.remove('active');
-                }
-            }
-        }
+    const isPortrait = window.innerHeight > window.innerWidth;
+    cam.targetPitch = isPortrait ? 1.0 : 0.85;
+    cam.targetDist = isPortrait ? 18.0 : 14.0;
 
-        function purchaseUpgrade(type) {
-            const baseCost = 20;
-            if (type === 'engine' && gameConfig.engineLevel < 5) {
-                const cost = baseCost * gameConfig.engineLevel;
-                if (gameConfig.totalCrystals >= cost) {
-                    gameConfig.totalCrystals -= cost;
-                    gameConfig.engineLevel++;
-                }
-            } else if (type === 'shield' && gameConfig.shieldLevel < 5) {
-                const cost = baseCost * gameConfig.shieldLevel;
-                if (gameConfig.totalCrystals >= cost) {
-                    gameConfig.totalCrystals -= cost;
-                    gameConfig.shieldLevel++;
-                }
-            } else if (type === 'weapon' && gameConfig.weaponLevel < 5) {
-                const cost = baseCost * gameConfig.weaponLevel;
-                if (gameConfig.totalCrystals >= cost) {
-                    gameConfig.totalCrystals -= cost;
-                    gameConfig.weaponLevel++;
-                }
-            }
-            audioSynth.playCollect();
-            saveData();
-            updateHUDElements();
-            updateGarageUI();
-        }
+    syncPieces();
+    updateUI();
+    startClocks();
 
-        /* Session lifecycle state managers */
-        function startGame() {
-            // Setup parameters
-            gameConfig.score = 0;
-            gameConfig.shieldHealth = gameConfig.maxShieldHealth;
-            targetLane = 0;
-            shipX = 0;
+    // If player is Black, White AI takes the opening turn
+    if (playerColor === 'b') {
+        setTimeout(triggerAIMove, 400);
+    }
+}
 
-            const speedScale = 1 + (gameConfig.engineLevel * 0.15) + (gameConfig.difficulty * 0.3);
-            gameConfig.currentSpeed = gameConfig.maxSpeed * speedScale * 0.5;
+document.getElementById('btn-new-game').addEventListener('click', startNewGame);
 
-            // Reset buffers
-            obstacles = [];
-            crystals = [];
-            lasers = [];
-            particles = [];
-            scenery = [];
+document.getElementById('player-color').addEventListener('change', () => {
+    startNewGame();
+});
 
-            currentGameState = GAME_STATES.PLAYING;
-            showPanel(null); // Clear interfaces
+document.getElementById('btn-restart-overlay').addEventListener('click', () => {
+    startNewGame();
+});
+document.getElementById('btn-close-overlay').addEventListener('click', () => {
+    document.getElementById('status-overlay').classList.remove('show');
+});
 
-            audioSynth.startSynthwaveBeat();
-        }
+document.getElementById('btn-undo').addEventListener('click', () => {
+    if (engine.history.length >= 2 && !isGameOver) {
+        engine.undoMove();
+        engine.undoMove();
+        selectedSq = null;
+        validMoveTargets = [];
+        lastMove = null;
+        syncPieces();
+        updateUI();
+        if (engine.history.length === 0) document.getElementById('btn-undo').disabled = true;
+    }
+});
 
-        function endGame() {
-            currentGameState = GAME_STATES.GAMEOVER;
-            audioSynth.stopSynthwaveBeat();
+document.getElementById('time-control').addEventListener('change', () => {
+    startClocks();
+});
 
-            if (gameConfig.score > gameConfig.highScore) {
-                gameConfig.highScore = gameConfig.score;
-            }
-            saveData();
+// Camera Presets
+document.getElementById('cam-player').addEventListener('click', () => {
+    cam.targetYaw = playerColor === 'b' ? Math.PI : 0; 
+    cam.targetPitch = 1.05; 
+    cam.targetDist = 15.0;
+});
+document.getElementById('cam-top').addEventListener('click', () => {
+    cam.targetYaw = playerColor === 'b' ? Math.PI : 0; 
+    cam.targetPitch = 1.52; 
+    cam.targetDist = 14.0;
+});
+document.getElementById('cam-side').addEventListener('click', () => {
+    cam.targetYaw = (playerColor === 'b' ? Math.PI : 0) + Math.PI / 2; 
+    cam.targetPitch = 0.65; 
+    cam.targetDist = 15.0;
+});
+document.getElementById('btn-camera-reset').addEventListener('click', () => {
+    cam.targetYaw = playerColor === 'b' ? Math.PI : 0; 
+    cam.targetPitch = 1.00; 
+    cam.targetDist = 14.0;
+});
 
-            document.getElementById('go-score').innerText = Math.floor(gameConfig.score);
-            document.getElementById('go-crystals').innerHTML = `${gameConfig.totalCrystals} <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--neon-pink);"><path d="M6 3h12l4 6-10 13L2 9z"></path></svg>`;
+// Sound Toggle
+document.getElementById('btn-sound-toggle').addEventListener('click', () => {
+    audioMuted = !audioMuted;
+    const iconOn = document.getElementById('sound-icon-on');
+    const iconOff = document.getElementById('sound-icon-off');
+    if (audioMuted) {
+        iconOn.style.display = 'none';
+        iconOff.style.display = 'block';
+    } else {
+        iconOn.style.display = 'block';
+        iconOff.style.display = 'none';
+        playTone('select');
+    }
+});
 
-            showPanel('gameover-menu');
-            updateHUDElements();
-        }
+// Instructions Modal
+document.getElementById('btn-info-toggle').addEventListener('click', () => {
+    document.getElementById('info-modal').classList.add('show');
+});
+document.getElementById('btn-close-info').addEventListener('click', () => {
+    document.getElementById('info-modal').classList.remove('show');
+});
+document.getElementById('btn-info-ok').addEventListener('click', () => {
+    document.getElementById('info-modal').classList.remove('show');
+});
 
-        // Window startup entry
-        window.onload = function() {
-            handleResize();
-            initStarfield();
-            bindUI();
-            loadData();
-            updateAudioUIState();
-            
-            // Kickstart animations
-            requestAnimationFrame(gameLoop);
-        };
-    </script>
+window.onload = function () {
+    startClocks();
+    updateUI();
+    requestAnimationFrame(render);
+};
+</script>
 </body>
 </html>
