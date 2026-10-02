@@ -2236,13 +2236,13 @@ document.getElementById('time-control').addEventListener('change', () => {
 // Camera Presets
 document.getElementById('cam-player').addEventListener('click', () => {
     cam.targetYaw = playerColor === 'b' ? Math.PI : 0; 
-    cam.targetPitch = 1.05; 
+    cam.targetPitch = 1.00; 
     cam.targetDist = 15.0;
 });
 document.getElementById('cam-top').addEventListener('click', () => {
     cam.targetYaw = playerColor === 'b' ? Math.PI : 0; 
     cam.targetPitch = 1.52; 
-    cam.targetDist = 14.0;
+    cam.targetDist = 15.0;
 });
 document.getElementById('cam-side').addEventListener('click', () => {
     cam.targetYaw = (playerColor === 'b' ? Math.PI : 0) + Math.PI / 2; 
@@ -2252,7 +2252,7 @@ document.getElementById('cam-side').addEventListener('click', () => {
 document.getElementById('btn-camera-reset').addEventListener('click', () => {
     cam.targetYaw = playerColor === 'b' ? Math.PI : 0; 
     cam.targetPitch = 1.00; 
-    cam.targetDist = 14.0;
+    cam.targetDist = 15.0;
 });
 
 // Sound Toggle
