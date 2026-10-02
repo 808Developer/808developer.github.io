@@ -438,7 +438,7 @@
                 right: 8px;
                 flex-direction: column-reverse;
                 align-items: stretch;
-                gap: 6px;
+                gap: 5px;
             }
             .cam-controls {
                 display: none;
@@ -450,14 +450,16 @@
                 -webkit-overflow-scrolling: touch;
                 gap: 8px;
             }
-
+            .control-dock::-webkit-scrollbar {
+                display: block;
+            }
             .btn-primary, .btn-secondary, select.ui-select {
-                min-height: 36px;
-                font-size: 11px;
-                padding: 6px 10px;
+                min-height: 20px;
+                font-size: 10px;
+                padding: 5px 5px;
             }
             .modal-window {
-                padding: 18px 14px;
+                padding: 10px 5px;
                 max-width: 92vw;
             }
         }
@@ -486,8 +488,8 @@
                 <h1 style="font-size: 16px; font-weight: 800; color: #fff; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
                     Chess Spider <span style="font-size: 10px; background: rgba(239, 68, 68, 0.3); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); padding: 1px 6px; border-radius: 999px; font-family: monospace;">3D</span>
                 </h1>
-                <p id="sub-status" style="font-size: 11px; color: var(--text-muted);">White's move • Click a piece to play</p>
-                <h5>&copy;2026 i808developer</h5>
+                <h6>&copy;2026 i808developer</h6>
+                <p id="sub-status" style="font-size: 11px; color: var(--text-muted);">White's move • Click on occupied square to move</p>
             </div>
         </div>
 
