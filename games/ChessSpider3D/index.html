@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!--Copyright (c) 2026 - i808developer-->
+<!--ALL RIGHTS RESERVED-->
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Chess Class</title>
+  <link rel="stylesheet" href="css/main.css" content="text/css"/>
+  <link rel="icon" href="favicon.ico" content="icon/x-icon" />
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="glcanvas"></canvas>
+    <div id="ui-layer">
+        <div class="header">
+            <h1>Chess Spider 3D</h1>
+                    <div id="instructions">• Click the square occupied to move the piece</div>
+
+        </div>
+        
+        <div id="thinking-indicator"><div class="spinner"></div> AI is thinking...</div>
+        
+        <div id="status-overlay">
+            <span id="status-text">Checkmate!</span>
+            <button id="btn-restart-overlay">Play Again?</button>
+        </div>
+
+        <div id="promotion-dialog">
+            <h3>Choose Promotion</h3>
+            <div class="promo-buttons">
+                <button class="promo-btn" data-piece="q">Queen</button>
+                <button class="promo-btn" data-piece="r">Rook</button>
+                <button class="promo-btn" data-piece="b">Bishop</button>
+                <button class="promo-btn" data-piece="n">Knight</button>
+            </div>
+        </div>
+
+        <div id="clock-container" style="display: none;">
+            <div id="black-clock" class="clock">05:00</div>
+            <div id="white-clock" class="clock active">05:00</div>
+        </div>
+
+        <div class="controls">
+            <select id="player-color">
+                <option value="w" selected>Play as White</option>
+                <option value="b">Play as Black</option>
+            </select>
+            <select id="difficulty-select">
+                <option value="1">Easy</option>
+                <option value="2">Medium</option>
+                <option value="3" selected>Hard</option>
+            </select>
+            <select id="time-control">
+                <option value="0" selected>No Clock</option>
+                <option value="180">3 min</option>
+                <option value="300" >5 min</option>
+                <option value="600">10 min</option>
+                <option value="900">15 min</option>
+                <option value="1200">20 min</option>
+            </select>
+            <button id="btn-undo" disabled>Undo</button>
+            <button id="btn-new-game">New Game</button>
+	<footer>
+		<h3 style="font-family: New Times Roman; text-align: right; padding-right: 20px;">&copy;2026 i808developer</h3>
+		<!--<h2>-<u><b>ALL RIGHTS RESERVED</b></u>-</h2>-->
+	</footer>
+        </div>
+    </div>
+</div>
+  <script src="js/chess.js"></script>
+</body>
+</html>
+
+<script>
