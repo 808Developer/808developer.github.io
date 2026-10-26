@@ -598,7 +598,7 @@ function myChess() {
   let myWindow = window.open("https://808developer.github.io/xodbox/ChessSpider3D", "new_tab");
 }
 function myRealm() {
-  let myWindow = window.open("https://808developer.github.io/xodbox/Realm3D", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=50,left=0,width=650,height=800");
+  let myWindow = window.open("https://808developer.github.io/xodbox/Realm3D", "new_tab");
 }
 function myRetro() {
   let myWindow = window.open("https://808developer.github.io/xodbox/RetroShooter3D", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=50,left=0,width=650,height=800");
@@ -610,7 +610,7 @@ function myAsteroid() {
   let myWindow = window.open("https://808developer.github.io/xodbox/AsteroidShooter3D", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=50,left=0,width=650,height=800");
 }
 function myStruck() {
-  let myWindow = window.open("https://808developer.github.io/xodbox/Cyberstruck3D", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=50,left=0,width=650,height=800");
+  let myWindow = window.open("https://808developer.github.io/xodbox/Cyberstruck3D", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes");
 }
 function btnProducts() { 
     document.getElementById("myProducts").style.color = "green";
