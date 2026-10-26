@@ -591,15 +591,12 @@
       controls.target.set(0, 0, 0);
     });
 
-<script>
 function openNav() {
   document.getElementById("mySidenav").style.width = "50%";
-  
 }
-function myHome() {
-  let myWindow = window.open("https://808developer.github.io/xodbox/ChessSpider3D", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=50,left=0,width=650,height=800");
+function myChess() {
+  let myWindow = window.open("https://808developer.github.io/xodbox/ChessSpider3D", "new_tab");
 }
-
 function myRealm() {
   let myWindow = window.open("https://808developer.github.io/xodbox/Realm3D", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=50,left=0,width=650,height=800");
 }
@@ -609,41 +606,30 @@ function myRetro() {
 function myTerminal() {
   let myWindow = window.open("https://808developer.github.io/xodbox/Terminal3D", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=50,left=0,width=650,height=800");
 }
-function myPunch() {
+function myAsteroid() {
   let myWindow = window.open("https://808developer.github.io/xodbox/AsteroidShooter3D", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=50,left=0,width=650,height=800");
 }
 function myStruck() {
-  let myWindow = window.open("https://808developer.github.io/xodbox/AsteroidShooter3D", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=50,left=0,width=650,height=800");
+  let myWindow = window.open("https://808developer.github.io/xodbox/Cyberstruck3D", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=50,left=0,width=650,height=800");
 }
-function btnClicked() {
-    document.getElementById("myServices").style.color = "green";
-    document.getElementById("myClients").style.color = "white";
-    document.getElementById("myContact").style.color = "white";
-    document.getElementById("myAbout").style.color = "white";
-
-}
-function btnClient() { 
-    document.getElementById("myClients").style.color = "green";
-    document.getElementById("myServices").style.color = "white";
+function btnProducts() { 
+    document.getElementById("myProducts").style.color = "green";
     document.getElementById("myContact").style.color = "white";
     document.getElementById("myAbout").style.color = "white";
 }
 function btnContact() {
     document.getElementById("myContact").style.color = "green";
-    document.getElementById("myClients").style.color = "white";
-    document.getElementById("myServices").style.color = "white";
+    document.getElementById("myProducts").style.color = "white";
     document.getElementById("myAbout").style.color = "white";
 }
 function btnAbout() {
     document.getElementById("myAbout").style.color = "green";
-    document.getElementById("myClients").style.color = "white";
+    document.getElementById("myProducts").style.color = "white";
     document.getElementById("myContact").style.color = "white";
-    document.getElementById("myServices").style.color = "white";
 }
 function closeNav() {
-  document.getElementById("mySidenav").style.width = "0";
-    document.getElementById("myServices").style.color = "white";
-    document.getElementById("myClients").style.color = "white";
+    document.getElementById("mySidenav").style.width = "0";
+    document.getElementById("myProducts").style.color = "white";
     document.getElementById("myContact").style.color = "white";
     document.getElementById("myAbout").style.color = "white";
 }
