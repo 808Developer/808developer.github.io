@@ -1,0 +1,282 @@
+* {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050608;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      color: #00ffcc;
+    }
+    #game-canvas {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      cursor: crosshair;
+    }
+    /* ud Overlays */
+    #ud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: none;
+    }
+    /* Crosshair */
+    #crosshair-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 48px;
+      height: 48px;
+      pointer-events: none;
+    }
+    .ch-line {
+      position: absolute;
+      background: #00ffcc;
+      box-shadow: 0 0 6px #00ffcca8;
+      transition: transform 0.06s ease-out;
+    }
+    .ch-top { width: 2px; height: 10px; left: 23px; top: 0px; }
+    .ch-bottom { width: 2px; height: 10px; left: 23px; bottom: 0px; }
+    .ch-left { height: 2px; width: 10px; top: 23px; left: 0px; }
+    .ch-right { height: 2px; width: 10px; top: 23px; right: 0px; }
+    .ch-dot {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: #ff3366;
+      border-radius: 50%;
+      top: 22px;
+      left: 22px;
+      box-shadow: 0 0 4px #ff3366;
+    }
+    #hitmarker {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 24px;
+      height: 24px;
+      transform: translate(-50%, -50%) rotate(45deg);
+      border: 2px solid transparent;
+      opacity: 0;
+      transition: opacity 0.05s ease;
+      pointer-events: none;
+    }
+    #hitmarker.active {
+      border-color: #ff2255;
+      opacity: 1;
+      transform: translate(-50%, -50%) rotate(45deg) scale(1.2);
+    }
+
+    /* Top Stats */
+    .top-bar {
+      position: absolute;
+      top: 20px;
+      left: 24px;
+      right: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 14px;
+      font-weight: 700;
+      text-shadow: 0 0 10px rgba(0,255,204,0.4);
+    }
+    .badge {
+      background: rgba(10, 20, 28, 0.75);
+      border: 1px solid rgba(0, 255, 204, 0.35);
+      padding: 8px 16px;
+      border-radius: 6px;
+      backdrop-filter: blur(4px);
+    }
+    .radar-box {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      width: 140px;
+      height: 140px;
+      background: rgba(6, 12, 18, 0.85);
+      border: 1px solid rgba(0, 255, 204, 0.4);
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+    }
+    #radar-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Bottom Status Bars */
+    .bottom-bar {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      right: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .vitals-card {
+      background: rgba(8, 16, 24, 0.85);
+      border: 1px solid rgba(0, 255, 204, 0.3);
+      padding: 16px 20px;
+      border-radius: 8px;
+      width: 280px;
+      backdrop-filter: blur(6px);
+    }
+    .vital-title {
+      font-size: 11px;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .bar-bg {
+      width: 100%;
+      height: 10px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .bar-fill-hp {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #ff1a53, #00ffaa);
+      transition: width 0.15s ease-out;
+      box-shadow: 0 0 8px rgba(0,255,170,0.5);
+    }
+    .bar-fill-sh {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #0077ff, #00eeff);
+      transition: width 0.15s ease-out;
+      box-shadow: 0 0 8px rgba(0,238,255,0.5);
+    }
+    .ammo-card {
+      background: rgba(8, 16, 24, 0.85);
+      border: 1px solid rgba(0, 255, 204, 0.3);
+      padding: 16px 28px;
+      border-radius: 8px;
+      text-align: right;
+      backdrop-filter: blur(6px);
+    }
+    .ammo-digits {
+      font-size: 38px;
+      font-weight: 900;
+      color: #00ffcc;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 12px rgba(0,255,204,0.6);
+    }
+    .ammo-reserve {
+      font-size: 18px;
+      color: #559999;
+      margin-left: 6px;
+    }
+    .reload-prompt {
+      color: #ff3366;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      display: none;
+      animation: pulse 0.7s infinite alternate;
+      margin-top: 4px;
+    }
+    @keyframes pulse { from { opacity: 0.3; } to { opacity: 1; } }
+
+    /* Damage indicator vignette */
+    #damage-flash {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      box-shadow: inset 0 0 80px rgba(255, 0, 50, 0);
+      transition: box-shadow 0.1s ease;
+    }
+    #damage-flash.hurt {
+      box-shadow: inset 0 0 100px rgba(255, 0, 50, 0.75);
+    }
+
+    /* Modal Screens */
+    .screen-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, rgba(10, 18, 28, 0.92) 0%, rgba(4, 6, 10, 0.98) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    .screen-overlay.hidden { display: none; }
+    .game-title {
+      font-size: 56px;
+      font-weight: 900;
+      letter-spacing: 6px;
+      background: linear-gradient(135deg, #00ffcc, #0077ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .game-subtitle {
+      font-size: 15px;
+      color: #7b9ea8;
+      letter-spacing: 3px;
+      margin-bottom: 32px;
+      text-transform: uppercase;
+    }
+    .menu-btn {
+      background: linear-gradient(135deg, #00ffcc 0%, #0099aa 100%);
+      color: #04080e;
+      border: none;
+      padding: 16px 42px;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(0, 255, 204, 0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+      text-transform: uppercase;
+    }
+    .menu-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 35px rgba(0, 255, 204, 0.7);
+    }
+    .guide-box {
+      margin-top: 36px;
+      border: 1px solid rgba(0, 255, 204, 0.2);
+      background: rgba(14, 24, 34, 0.6);
+      padding: 18px 28px;
+      border-radius: 6px;
+      max-width: 580px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #8da4af;
+      letter-spacing: 1px;
+    }
+    .key-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      background: rgba(0,255,204,0.15);
+      color: #00ffcc;
+      border-radius: 3px;
+      font-weight: bold;
+    }

@@ -1,0 +1,27 @@
+<svg width="64" height="64" viewBox="0 0 64 64"
+     xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" rx="10" fill="#05060A"/>
+
+  <!-- Tiny isometric board -->
+  <g transform="translate(32,38) scale(0.6)">
+    <polygon points="-20,-10 0,-20 20,-10 0,0"
+             fill="#111827" stroke="#00FFC8" stroke-width="2"/>
+    <rect x="-16" y="-14" width="8" height="8" fill="#00FFC8"/>
+    <rect x="-0"  y="-14" width="8" height="8" fill="#00FFC8"/>
+    <rect x="8"   y="-6"  width="8" height="8" fill="#00FFC8"/>
+  </g>
+
+  <!-- Spider head + legs simplified -->
+  <g transform="translate(32,22)">
+    <circle cx="0" cy="0" r="8" fill="#020617" stroke="#00FFC8" stroke-width="1.5"/>
+    <circle cx="-3" cy="-1" r="1.5" fill="#00FFC8"/>
+    <circle cx="3"  cy="-1" r="1.5" fill="#00FFC8"/>
+
+    <g stroke="#00FFC8" stroke-width="1.5" stroke-linecap="round">
+      <path d="M -4 -1 C -9 -5 -11 -9 -13 -13"/>
+      <path d="M -4  1 C -9  5 -11  9 -13  13"/>
+      <path d="M  4 -1 C  9 -5 11 -9 13 -13"/>
+      <path d="M  4  1 C  9  5 11  9 13  13"/>
+    </g>
+  </g>
+</svg>

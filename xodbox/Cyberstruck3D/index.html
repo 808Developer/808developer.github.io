@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<!--Copyright (c) 2026 - i808developer-->
+<!--ALL RIGHTS RESERVED-->
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>CYBERSTRUCK-3D</title>
+  <link rel="stylesheet" type="text/css" href="css/main.css" />
+  <link rel="shortcut icon" type="x-icon/ico" href="favicon.ico" />
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+
+  <div id="damage-flash"></div>
+
+  <!-- In-game Sci-Fi User Display -->
+
+  <div id="ud">
+    <div class="top-bar">
+      <div class="badge" id="wave-indicator">ZONE 01 // WAVE 1</div>
+      <div class="badge" id="kills-indicator">ELIMINATIONS: 0</div>
+      <div style="width: 140px;"></div> 
+
+<!-- Radar placeholder space -->
+
+    </div>
+
+    <div class="radar-box">
+      <canvas id="radar-canvas" width="140" height="140"></canvas>
+    </div>
+
+    <div id="crosshair-container">
+      <div class="ch-line ch-top" id="ch-top"></div>
+      <div class="ch-line ch-bottom" id="ch-bottom"></div>
+      <div class="ch-line ch-left" id="ch-left"></div>
+      <div class="ch-line ch-right" id="ch-right"></div>
+      <div class="ch-dot"></div>
+      <div id="hitmarker"></div>
+    </div>
+
+    <div class="bottom-bar">
+      <div class="vitals-card">
+        <div class="vital-title">
+          <span>HEALTH INTEGRITY</span>
+          <span id="hp-val">100%</span>
+        </div>
+          <div class="bar-bg">
+           <div class="bar-fill-hp" id="hp-bar">
+           </div>
+          </div>
+        <div class="vital-title">
+         <span>KINETIC SHIELD</span>
+         <span id="sh-val">100%</span>
+        </div>
+        <div class="bar-bg">
+         <div class="bar-fill-sh" id="sh-bar">
+         </div>
+        </div>
+      </div>
+
+      <div class="ammo-card">
+        <div>
+         <span class="ammo-digits" id="ammo-clip">42</span>
+         <span class="ammo-reserve" id="ammo-total">/808</span>
+        </div>
+        <div class="reload-prompt" id="reload-prompt">PRESS [R] TO RELOAD</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Start Menu Overlay -->
+  <div id="start-menu" class="screen-overlay">
+    <h1 class="game-title">CYBERSTRUCK 3D</h1>
+    <div class="game-subtitle">Pure WebGL Autonomous Bot Arena</div>
+    <button class="menu-btn" id="start-btn">ENGAGE SIMULATION</button>
+    <div class="guide-box">
+      <p><span class="key-badge">W A S D</span> Navigate combat zone</p>
+<!--      <p><span class="key-badge">Direction Arrows</span> Navigate combat zone</p>     -->
+      <p><span class="key-badge">MOUSE</span> Look around & aim (Pointer Lock)</p>
+      <p><span class="key-badge">LEFT CLICK</span> Plasma auto-rifle fire</p>
+      <p><span class="key-badge">SPACE</span> Jump booster / 
+             <span class="key-badge">C</span> Crouch</p>
+      <p><span class="key-badge">SHIFT</span> Overdrive sprint / 
+             <span class="key-badge">R</span> Reload battery</p>
+      <p><span class="key-badge">ESC</span> Pause simulation</p>
+    </div>
+<footer>&copy;2026 - i808developer</footer>
+  </div>
+
+  <!-- Pause Overlay -->
+  <div id="pause-menu" class="screen-overlay hidden">
+    <h1 class="game-title">SIMULATION PAUSED</h1>
+    <button class="menu-btn" id="resume-btn">RESUME ENGAGEMENT</button>
+  </div>
+
+  <!-- Game Over Overlay -->
+  <div id="game-over-menu" class="screen-overlay hidden">
+    <h1 class="game-title" style="background: linear-gradient(135deg, #ff1155, #ffaa00); -webkit-background-clip: text;">SYSTEM OFFLINE</h1>
+    <div class="game-subtitle" id="game-over-stats">You were neutralized in Wave 1</div>
+    <button class="menu-btn" id="restart-btn">REBOOT SYSTEM</button>
+<footer>&copy;2026 - i808developer</footer>
+  </div>
+
+<script src="js/main.js"></script>
+</body>
+</html>
