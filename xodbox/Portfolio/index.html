@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<!--Copyright (c) 2026 - i808developer-->
+<!--ALL RIGHTS RESERVED-->
+<html lang="en-US" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robert Caudle (i808developer) | Web Developer & Automation Engineer</title>
+    <link rel="shortcut-icon" href="favicon.ico" type="x-icon/ico" />
+    <style>
+        /* CSS Reset & Variables */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-primary: #090d16;
+            --bg-secondary: #0f172a;
+            --bg-card: #131c31;
+            --border-color: #1e293b;
+            --border-hover: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-cyan: #38bdf8;
+            --accent-blue: #60a5fa;
+            --accent-glow: rgba(56, 189, 248, 0.15);
+            --font-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: var(--font-stack);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Utility Layout */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header & Navigation */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background-color: rgba(9, 13, 22, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 4rem;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: var(--accent-cyan);
+            text-decoration: none;
+            letter-spacing: -0.025em;
+        }
+
+        .nav-links {
+            display: none;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        @media (min-width: 768px) {
+            .nav-links {
+                display: flex;
+            }
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-cyan);
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn-sm2 {
+	    position: absolute;
+            padding: 0.5rem 1rem;
+            background-color: var(--accent-cyan);
+            color: var(--bg-primary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            transition: opacity 0.2s ease, transform 0.1s ease;
+	    right: 0;
+	    top: 0;
+	    z-index: 2;
+        }
+
+        .btn-sm {
+	    position: absolute;
+            padding: 0.5rem 1rem;
+            background-color: var(--accent-cyan);
+            color: var(--bg-primary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            transition: opacity 0.2s ease, transform 0.1s ease;
+	    left: 0;
+	    top: 0;
+	    z-index: 2;
+        }
+
+        .btn-sm:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8rem 1.5rem 5rem 1.5rem;
+            position: relative;
+            background: radial-gradient(circle at center, var(--accent-glow) 0%, transparent 70%);
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 0.35rem 1rem;
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+        }
+
+        @media (min-width: 640px) {
+            .hero h1 {
+                font-size: 4rem;
+            }
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 48rem;
+            margin: 0 auto 2.5rem auto;
+            line-height: 1.7;
+        }
+
+        @media (min-width: 640px) {
+            .hero p {
+                font-size: 1.25rem;
+            }
+        }
+
+        .hero-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            justify-content: center;
+            max-width: 32rem;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 640px) {
+            .hero-buttons {
+                flex-direction: row;
+            }
+        }
+
+        .btn-primary {
+            background-color: var(--accent-cyan);
+            color: var(--bg-primary);
+            font-weight: 700;
+            padding: 0.875rem 2rem;
+            border-radius: 0.75rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.95;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-secondary);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            font-weight: 600;
+            padding: 0.875rem 2rem;
+            border-radius: 0.75rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-cyan);
+            background-color: rgba(56, 189, 248, 0.05);
+        }
+
+        /* Profile Badges Bar */
+        .profiles-bar {
+            padding: 2rem 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            background-color: rgba(15, 23, 42, 0.5);
+        }
+
+        .profiles-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .profiles-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .profile-link-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+        }
+
+        .profile-link-card:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+        }
+
+        .profile-icon {
+            font-size: 1.5rem;
+            color: var(--accent-cyan);
+        }
+
+        .profile-info h4 {
+            font-size: 0.875rem;
+            font-weight: 700;
+        }
+
+        .profile-info span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Section Headings */
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            max-width: 36rem;
+            margin: 0 auto;
+        }
+
+        /* Projects Section */
+        .projects-section {
+            padding: 6rem 0;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .projects-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .projects-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .project-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        }
+
+        .project-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.25rem;
+        }
+
+        .project-icon-wrap {
+            width: 3rem;
+            height: 3rem;
+            background: rgba(56, 189, 248, 0.1);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: var(--accent-cyan);
+        }
+
+        .project-tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0.25rem 0.625rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        .project-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .project-card p {
+            color: var(--text-muted);
+            font-size: 0.925rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .project-footer {
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.25rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tech-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+        }
+
+        .tech-tag {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            background: var(--bg-secondary);
+            color: var(--accent-cyan);
+            border-radius: 0.375rem;
+            font-weight: 500;
+        }
+
+        .project-link {
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            transition: color 0.2s ease;
+        }
+
+        .project-link:hover {
+            color: var(--accent-cyan);
+        }
+
+        /* Skills & Competencies Section */
+        .skills-section {
+            padding: 6rem 0;
+            background-color: rgba(15, 23, 42, 0.4);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .skills-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .skill-category {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 2rem;
+        }
+
+        .skill-category h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .skill-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.875rem;
+        }
+
+        .skill-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .skill-list li::before {
+            content: "▸";
+            color: var(--accent-cyan);
+            font-weight: bold;
+        }
+
+        /* About / Background Section */
+        .about-section {
+            padding: 6rem 0;
+        }
+
+        .about-container {
+            max-width: 48rem;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .about-container p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Contact & CTA Section */
+        .contact-section {
+            padding: 6rem 0;
+            background: radial-gradient(circle at bottom, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .contact-box {
+            max-width: 40rem;
+            margin: 0 auto;
+        }
+
+        .contact-box h2 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .contact-box p {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 0;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navigation -->
+    <header>
+        <div class="container nav-content" >
+            <a href="#contact" class="logo">i808developer</a>
+            <ul class="nav-links">
+            </ul>
+            <div class="nav-actions">
+                <a href="https://www.github.com/808developer" target="_blank" rel="noopener noreferrer" class="btn-sm">MyGitHubProfile</a>
+            </div>
+	    <div>
+                <a href="https://contra.com/i808developer/work" target="_blank" rel="noopener noreferrer" class="btn-sm2">Hire me on Contra</a>
+	    </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <span class="hero-badge">15+ Years Professional Engineering Experience</span>
+            <h1>Engineering <span>Standalone Web Apps</span> & Autonomous Systems</h1>
+            <p>
+                Hi, I'm <strong>Robert Caudle</strong> (i808developer). I specialize in zero-dependency 3D web games, interactive canvas tools, Web Audio synthesizers, and vanilla JavaScript/WebGL development—paired with deep industrial automation expertise.
+            </p>
+            <div class="hero-buttons">
+                <a href="#projects" class="btn-primary">Explore Projects</a>
+                <a href="https://www.linkedin.com/in/i808developer" target="_blank" rel="noopener noreferrer" class="btn-secondary">Connect on LinkedIn</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Profile Links Bar -->
+    <div class="profiles-bar">
+        <div class="container">
+            <div class="profiles-grid">
+                <a href="https://www.linkedin.com/in/i808developer" target="_blank" rel="noopener noreferrer" class="profile-link-card">
+                    <div class="profile-icon">💼</div>
+                    <div class="profile-info">
+                        <h4>LinkedIn</h4>
+                        <span>Professional Network</span>
+                    </div>
+                </a>
+                <a href="https://808developer.github.io" target="_blank" rel="noopener noreferrer" class="profile-link-card">
+                    <div class="profile-icon">⚡</div>
+                    <div class="profile-info">
+                        <h4>GitHub Portfolio</h4>
+                        <span>808developer.github.io</span>
+                    </div>
+                </a>
+                <a href="https://learn.microsoft.com/users/808developer" target="_blank" rel="noopener noreferrer" class="profile-link-card">
+                    <div class="profile-icon">🎓</div>
+                    <div class="profile-info">
+                        <h4>Microsoft Learn</h4>
+                        <span>Certifications & Badges</span>
+                    </div>
+                </a>
+                <a href="https://amazon.com/author/robertcaudle" target="_blank" rel="noopener noreferrer" class="profile-link-card">
+                    <div class="profile-icon">📚</div>
+                    <div class="profile-info">
+                        <h4>Amazon Author</h4>
+                        <span>Published Works</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Featured Projects Section -->
+    <section id="projects" class="projects-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Featured Projects Showcase</h2>
+                <p>Standalone, high-performance web applications, audio studios, 3D browser games, and published literature built without external frameworks.</p>
+            </div>
+
+            <div class="projects-grid">
+                <!-- Project 1 -->
+                <div class="project-card">
+                    <div>
+                        <div class="project-top">
+                            <div class="project-icon-wrap">🎹</div>
+                            <span class="project-tag">Audio App</span>
+                        </div>
+                        <h3>Keymotions3D</h3>
+                        <p>Standalone web application featuring Web Audio API custom synthesis, drum machine sequencing, and client-side WAV/MP3 recording capabilities.</p>
+                    </div>
+                    <div class="project-footer">
+                        <div class="tech-tags">
+                            <span class="tech-tag">Web Audio API</span>
+                            <span class="tech-tag">JavaScript</span>
+                        </div>
+                        <a href="https://808developer.github.io/xodbox/Keymotions3D" target="_blank" rel="noopener noreferrer" class="project-link">Launch i808Beats ↗</a>
+                    </div>
+                </div>
+
+                <!-- Project 2 -->
+                <div class="project-card">
+                    <div>
+                        <div class="project-top">
+                            <div class="project-icon-wrap">♟️</div>
+                            <span class="project-tag">3D Web Game</span>
+                        </div>
+                        <h3>GalaxyChess3D</h3>
+                        <p>Offline 3D web game featuring Material Design 3 UI, cathedral atmosphere, animated piece destruction particle effects, and synchronized chess clocks.</p>
+                    </div>
+                    <div class="project-footer">
+                        <div class="tech-tags">
+                            <span class="tech-tag">WebGL</span>
+                            <span class="tech-tag">Vanilla JS</span>
+                        </div>
+                        <a href="https://808developer.github.io/xodbox/GalaxyChess3D" target="_blank" rel="noopener noreferrer" class="project-link">Play Chess ↗</a>
+                    </div>
+                </div>
+
+                <!-- Project 3 -->
+                <div class="project-card">
+                    <div>
+                        <div class="project-top">
+                            <div class="project-icon-wrap">🥋</div>
+                            <span class="project-tag">Action Game</span>
+                        </div>
+                        <h3>WEBCHI3D</h3>
+                        <p>Standalone offline 3D third-person fighter featuring intelligent AI opponents, local PvP match modes, fluid combo systems, and physics hitboxes.</p>
+                    </div>
+                    <div class="project-footer">
+                        <div class="tech-tags">
+                            <span class="tech-tag">Three.js / WebGL</span>
+                            <span class="tech-tag">Canvas</span>
+                        </div>
+                        <a href="https://808developer.github.io/xodbox/Realm3D" target="_blank" rel="noopener noreferrer" class="project-link">Let's Fight!  ↗</a>
+                    </div>
+                </div>
+
+                <!-- Project 4 -->
+                <div class="project-card">
+                    <div>
+                        <div class="project-top">
+                            <div class="project-icon-wrap">🕷️</div>
+                            <span class="project-tag">WebGL Simulation</span>
+                        </div>
+                        <h3>KineticStrings3D</h3>
+                        <p>Interactive procedural simulation featuring inverse kinematics for leg movement, organic web physics, and reactive audio synthesis effects.</p>
+                    </div>
+                    <div class="project-footer">
+                        <div class="tech-tags">
+                            <span class="tech-tag">WebGL</span>
+                            <span class="tech-tag">Math Engine</span>
+                        </div>
+                        <a href="https://808developer.github.io/xodbox/KineticStrings3D" target="_blank" rel="noopener noreferrer" class="project-link">Play Music↗</a>
+                    </div>
+                </div>
+
+                <!-- Project 5 -->
+                <div class="project-card">
+                    <div>
+                        <div class="project-top">
+                            <div class="project-icon-wrap">🚀</div>
+                            <span class="project-tag">Arcade Game</span>
+                        </div>
+                        <h3>RetroShooter3D</h3>
+                        <p>Standalone offline synthwave highway 3D web game built using pure canvas projection, dynamic perspective rendering, and procedural retro soundtracks.</p>
+                    </div>
+                    <div class="project-footer">
+                        <div class="tech-tags">
+                            <span class="tech-tag">Canvas API</span>
+                            <span class="tech-tag">Audio API</span>
+                        </div>
+                        <a href="https://808developer.github.io/xodbox/RetroShooter3D" target="_blank" rel="noopener noreferrer" class="project-link">Play Game ↗</a>
+                    </div>
+                </div>
+
+                <!-- Project 6 -->
+<!--
+                <div class="project-card">
+                    <div>
+                        <div class="project-top">
+                            <div class="project-icon-wrap">📖</div>
+                            <span class="project-tag">Published Work</span>
+                        </div>
+                        <h3>Theredex: The Arthur Jones Project</h3>
+                        <p>Mystery, Thriller & Suspense Kindle eBook published on Amazon KDP, exploring deep technological intrigue, complex characters, and suspenseful plotting.</p>
+                    </div>
+                    <div class="project-footer">
+                        <div class="tech-tags">
+                            <span class="tech-tag">Amazon KDP</span>
+                            <span class="tech-tag">Kindle</span>
+                        </div>
+                        <a href="https://amazon.com/author/robertcaudle" target="_blank" rel="noopener noreferrer" class="project-link">View on Amazon ↗</a>
+                    </div>
+                </div>
+-->
+                <!-- Project 7 -->
+
+                <div class="project-card">
+                    <div>
+                        <div class="project-top">
+                            <div class="project-icon-wrap">📖</div>
+                            <span class="project-tag">Fast-Pace Game</span>
+                        </div>
+                        <h3>Agvs3D</h3>
+                        <p>This is just a game, however the 3D environment is very close to how fast pace production is in reality. Have fun playing the game but never do what Bobio did in the real world...</p>
+                    </div>
+                    <div class="project-footer">
+                        <div class="tech-tags">
+                            <span class="tech-tag">Canvas</span>
+                            <span class="tech-tag">Three.js / WebGL</span>
+                        </div>
+                        <a href="https://sites.google.com/view/lgvs" target="_blank" rel="noopener noreferrer" class="project-link">Run Lgvs ↗</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical Skills Section -->
+    <section id="skills" class="skills-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Technical Expertise & Competencies</h2>
+                <p>Bridging heavy industrial automation machinery with high-performance native web engineering.</p>
+            </div>
+
+            <div class="skills-grid">
+                <div class="skill-category">
+                    <h3>⚡ Native Web Development</h3>
+                    <ul class="skill-list">
+                        <li>Pure ES6+ JavaScript architecture with zero heavy frameworks.</li>
+                        <li>HTML5 Canvas, WebGL, and custom 3D math projection engines.</li>
+                        <li>Web Audio API custom sound synthesis and client-side WAV recording.</li>
+                        <li>Zero external third-party dependencies for maximum reliability & lightning speed.</li>
+                    </ul>
+                </div>
+
+                <div class="skill-category">
+                    <h3>🏭 Industrial Automation & AGVs</h3>
+                    <ul class="skill-list">
+                        <li>15+ years of professional experience in Automated Guided Vehicles (AGVs) & LGVs.</li>
+                        <li>PLC programming, operational technology, and hardware-software integration.</li>
+                        <li>Rigorous engineering mindset applied to mission-critical distributed systems.</li>
+                        <li>Real-time telemetry monitoring and fleet management systems architecture.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about-section">
+        <div class="container">
+            <div class="about-container">
+                <div class="section-header" style="margin-bottom: 2rem;">
+                    <h2>About Robert Caudle</h2>
+                </div>
+                <p>
+                    With over 12 years of hands-on engineering background in Automated Guided Vehicles (AGVs) and Industrial Automation, I approach software engineering with a deep respect for reliability, low-level architecture, and flawless performance.
+                </p>
+                <p>
+                    Whether building immersive 3D games in the browser using raw WebGL, composing procedural synthesizers with the Web Audio API, or authoring suspenseful fiction, I thrive on building complete solutions from the ground up.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact-section">
+        <div class="container">
+            <div class="contact-box">
+                <h2>Let's Build Something Together</h2>
+                <p>Looking for a seasoned engineer with deep mastery in native web development and complex system automation? Let's connect.</p>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <a href="https://www.linkedin.com/in/i808developer" target="_blank" rel="noopener noreferrer" class="btn-primary">Connect on LinkedIn</a>
+                    <a href="https://www.github.com/808developer" target="_blank" rel="noopener noreferrer" class="btn-secondary">Visit GitHub</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <span>Built with pure HTML, CSS, and vanilla JS. <h5>&copy; 2026 i808developer </h5></span>
+        </div>
+    </footer>
+
+</body>
+</html>
