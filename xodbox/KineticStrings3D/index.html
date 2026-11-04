@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<!--Copyright (c) 2026 - i808developer-->
+<!--ALL RIGHTS RESERVED-->
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Kinetic Strings & Drums</title>
+  <script src="js/twcss.js"></script>
+  <script src="js/three.min.js"></script>
+  <script src="js/lame.min.js"></script>
+  <link rel="shortcut-icon" href="favicon.ico" type="x-icon/ico" />
+  <style>
+    :root {
+      --bg: #07080c;
+      --panel: rgba(16, 18, 27, 0.76);
+      --border: rgba(255, 255, 255, 0.09);
+      --text: #eef0f6;
+      --muted: rgba(238, 240, 246, 0.48);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+    }
+
+    #webgl-container {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      cursor: crosshair;
+    }
+
+    #staff-canvas {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 175px;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    /* Glassmorphic floating HUD */
+    .glass-pill {
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--border);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+    }
+
+    .hud-btn {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid transparent;
+      padding: 6px 13px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .hud-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .hud-btn:active {
+      transform: translateY(0) scale(0.96);
+    }
+
+    .hud-btn.active {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.22);
+    }
+
+    .hud-btn.recording {
+      background: rgba(255, 71, 87, 0.2);
+      border-color: rgba(255, 71, 87, 0.55);
+      color: #ff6b81;
+      animation: pulse-rec 1.4s infinite ease-in-out;
+    }
+
+    @keyframes pulse-rec {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(255, 71, 87, 0); }
+    }
+
+    /* Custom minimal range sliders for 3D controls */
+    input[type="range"].studio-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      outline: none;
+    }
+
+    input[type="range"].studio-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #48dbfb;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(72, 219, 251, 0.8);
+      transition: transform 0.15s ease;
+    }
+
+    input[type="range"].studio-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Minimal Floating Dash Options -->
+  <header class="fixed top-4 left-1/2 -translate-x-1/2 z-20 flex flex-wrap items-center justify-center gap-2 w-[95vw] max-w-5xl pointer-events-none">
+    <nav class="glass-pill rounded-full px-2.5 py-1.5 flex flex-wrap items-center gap-1 pointer-events-auto" aria-label="Studio Controls">
+      <button id="btnSpawn" class="hud-btn" title="Spawn a 3D kinetic orb">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
+        + 3D Orb
+      </button>
+
+      <button id="btnOrbit" class="hud-btn active" title="Toggle orbital gravity field">
+        Flow: Orbit
+      </button>
+
+      <button id="btnTuning" class="hud-btn" title="Switch guitar tuning">
+        Tuning: Pentatonic
+      </button>
+
+      <div class="w-px h-4 bg-white/10 mx-0.5"></div>
+
+      <!-- 3D Web Visual Controls Trigger -->
+      <button id="btn3DControls" class="hud-btn" title="Adjust 3D camera perspective, depth & wave visuals">
+        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" />
+        </svg>
+        3D Visuals
+      </button>
+
+      <div class="w-px h-4 bg-white/10 mx-0.5"></div>
+
+      <!-- Score Playback & Audio Recording -->
+      <button id="btnPlayScore" class="hud-btn" title="Replay the sheet music notes">
+        ▶ Play Score
+      </button>
+
+      <button id="btnRecord" class="hud-btn" title="Record live audio to export as WAV or MP3">
+        <span id="recDot" class="w-2 h-2 rounded-full bg-rose-500"></span>
+        <span id="recLabel">Rec Audio</span>
+      </button>
+
+      <button id="btnOpenExports" class="hud-btn hidden text-amber-300" title="Export recorded session">
+        ⬇ Export (.WAV / .MP3)
+      </button>
+
+      <button id="btnClear" class="hud-btn text-white/60 hover:text-white" title="Reset orbs and sheet music">
+        Reset
+      </button>
+    </nav>
+  </header>
+
+  <!-- Subtle Hint Banner -->
+  <div id="hintBanner" class="fixed top-16 left-1/2 -translate-x-1/2 z-10 text-xs text-white/45 tracking-wide text-center pointer-events-none px-4 transition-opacity duration-500">
+    Swipe across 3D strings &amp; geometric drums — right-drag (or two-finger drag) to orbit the 3D camera <span><h4 style="color: white;"><b>&copy;2026 i808developer</b></h4></span>
+  </div>
+
+  <!-- Collapsible 3D Web Visual Controls Floating Panel -->
+  <aside id="panel3D" class="fixed top-20 right-5 z-20 w-72 glass-pill rounded-2xl p-4 hidden transition-all duration-200">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-white/90">3D Web Visual Controls</h2>
+      </div>
+      <button id="btnClose3D" class="text-white/40 hover:text-white text-xs px-1.5 py-0.5 rounded">✕</button>
+    </div>
+
+    <!-- Camera Presets -->
+    <div class="mb-3.5">
+      <label class="block text-[11px] text-white/50 mb-1.5">Camera Perspective</label>
+      <div class="grid grid-cols-2 gap-1.5">
+        <button data-cam="stage" class="cam-preset hud-btn active justify-center text-[11px] py-1 border border-white/10">Front Stage</button>
+        <button data-cam="iso" class="cam-preset hud-btn justify-center text-[11px] py-1 border border-white/10">Isometric 3D</button>
+        <button data-cam="top" class="cam-preset hud-btn justify-center text-[11px] py-1 border border-white/10">Top-Down</button>
+        <button data-cam="cinematic" class="cam-preset hud-btn justify-center text-[11px] py-1 border border-white/10">Auto-Orbit</button>
+      </div>
+    </div>
+
+    <!-- Sliders for 3D Geometry & Motion -->
+    <div class="space-y-3 text-xs">
+      <div>
+        <div class="flex justify-between text-[11px] text-white/65 mb-1">
+          <span>3D Depth Extrusion</span>
+          <span id="valDepth">1.0x</span>
+        </div>
+        <input id="sliderDepth" type="range" min="0.2" max="2.5" step="0.1" value="1.0" class="studio-slider" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-[11px] text-white/65 mb-1">
+          <span>String Wave Harmonics</span>
+          <span id="valWave">1.2x</span>
+        </div>
+        <input id="sliderWave" type="range" min="0.4" max="2.5" step="0.1" value="1.2" class="studio-slider" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-[11px] text-white/65 mb-1">
+          <span>Orb Speed</span>
+          <span id="valSpeed">1.0x</span>
+        </div>
+        <input id="sliderSpeed" type="range" min="0.4" max="2.2" step="0.1" value="1.0" class="studio-slider" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-[11px] text-white/65 mb-1">
+          <span>Camera Field of View</span>
+          <span id="valFov">50°</span>
+        </div>
+        <input id="sliderFov" type="range" min="32" max="75" step="1" value="50" class="studio-slider" />
+      </div>
+
+      <div class="pt-1 flex items-center justify-between border-t border-white/10">
+        <span class="text-[11px] text-white/60">Wireframe Drum Shells</span>
+        <input id="toggleWireframe" type="checkbox" class="accent-cyan-400 cursor-pointer" />
+      </div>
+    </div>
+  </aside>
+
+  <!-- Audio Export Drawer / Modal -->
+  <section id="exportModal" class="fixed top-20 left-1/2 -translate-x-1/2 z-30 w-[92vw] max-w-md glass-pill rounded-2xl p-4 hidden">
+    <div class="flex items-center justify-between mb-2.5">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-white/90">Recorded Studio Session</h3>
+      </div>
+      <button id="btnCloseExport" class="text-white/40 hover:text-white text-xs px-1.5 py-0.5 rounded">✕</button>
+    </div>
+
+    <p id="exportMeta" class="text-[11px] text-white/55 mb-3">
+      Captured stereo studio mix ready for download.
+    </p>
+
+    <audio id="audioPreview" controls class="w-full h-9 mb-3.5 rounded-lg opacity-90"></audio>
+
+    <div class="grid grid-cols-2 gap-2.5">
+      <button id="btnDownloadWav" class="hud-btn justify-center py-2.5 bg-white/10 hover:bg-white/15 border border-white/15 rounded-xl font-semibold text-xs">
+        ⬇ Download .WAV
+        <span class="text-[10px] text-white/45 font-normal">(Lossless)</span>
+      </button>
+      <button id="btnDownloadMp3" class="hud-btn justify-center py-2.5 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 text-cyan-200 rounded-xl font-semibold text-xs">
+        ⬇ Download .MP3
+        <span id="mp3Status" class="text-[10px] text-cyan-200/60 font-normal">(192kbps)</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- 3D WebGL Stage Container -->
+  <div id="webgl-container"></div>
+
+  <!-- 2D Sheet Music Overlay Canvas at Bottom -->
+  <canvas id="staff-canvas"></canvas>
+
+  <script>
+    /* =========================================================================
+       1. WEB AUDIO SYNTHESIS + STUDIO RECORDER (.WAV & .MP3 EXPORT)
+       ========================================================================= */
+    class StudioAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.master = null;
+        this.recorderNode = null;
+        this.isRecording = false;
+        this.recStartTime = 0;
+        this.leftBuffers = [];
+        this.rightBuffers = [];
+        this.recordingLength = 0;
+        this.lastWavBlob = null;
+        this.lastMp3Blob = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+
+          // Master bus + stereo ambience delay
+          this.master = this.ctx.createGain();
+          this.master.gain.value = 0.72;
+
+          this.mixBus = this.ctx.createGain();
+          this.mixBus.gain.value = 1.0;
+
+          const delayL = this.ctx.createDelay();
+          const delayR = this.ctx.createDelay();
+          delayL.delayTime.value = 0.16;
+          delayR.delayTime.value = 0.22;
+
+          const fb = this.ctx.createGain();
+          fb.gain.value = 0.22;
+
+          const wet = this.ctx.createGain();
+          wet.gain.value = 0.2;
+
+          this.master.connect(this.mixBus);
+          this.master.connect(delayL);
+          delayL.connect(delayR);
+          delayR.connect(fb);
+          fb.connect(delayL);
+          delayL.connect(wet);
+          delayR.connect(wet);
+          wet.connect(this.mixBus);
+
+          // Output to speakers
+          this.mixBus.connect(this.ctx.destination);
+
+          // Setup stereo PCM capture node for lossless WAV & MP3 encoding
+          const bufferSize = 4096;
+          this.recorderNode = this.ctx.createScriptProcessor(bufferSize, 2, 2);
+          this.recorderNode.onaudioprocess = (e) => {
+            if (!this.isRecording) return;
+            const left = e.inputBuffer.getChannelData(0);
+            const right = e.inputBuffer.getChannelData(1);
+            this.leftBuffers.push(new Float32Array(left));
+            this.rightBuffers.push(new Float32Array(right));
+            this.recordingLength += left.length;
+          };
+          this.mixBus.connect(this.recorderNode);
+          this.recorderNode.connect(this.ctx.destination);
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      startRecording() {
+        this.init();
+        this.leftBuffers = [];
+        this.rightBuffers = [];
+        this.recordingLength = 0;
+        this.lastWavBlob = null;
+        this.lastMp3Blob = null;
+        this.isRecording = true;
+        this.recStartTime = performance.now();
+      }
+
+      stopRecording() {
+        if (!this.isRecording) return null;
+        this.isRecording = false;
+        if (this.recordingLength === 0) return null;
+
+        const sampleRate = this.ctx.sampleRate;
+        const leftMerged = this.mergeBuffers(this.leftBuffers, this.recordingLength);
+        const rightMerged = this.mergeBuffers(this.rightBuffers, this.recordingLength);
+
+        this.lastLeft = leftMerged;
+        this.lastRight = rightMerged;
+        this.lastSampleRate = sampleRate;
+
+        this.lastWavBlob = this.encodeWAV(leftMerged, rightMerged, sampleRate);
+        return {
+          wavBlob: this.lastWavBlob,
+          durationSec: (this.recordingLength / sampleRate).toFixed(1)
+        };
+      }
+
+      mergeBuffers(bufferArray, recLength) {
+        const result = new Float32Array(recLength);
+        let offset = 0;
+        for (let i = 0; i < bufferArray.length; i++) {
+          result.set(bufferArray[i], offset);
+          offset += bufferArray[i].length;
+        }
+        return result;
+      }
+
+      encodeWAV(left, right, sampleRate) {
+        const interleaved = new Float32Array(left.length + right.length);
+        for (let i = 0, j = 0; i < left.length; i++) {
+          interleaved[j++] = left[i];
+          interleaved[j++] = right[i];
+        }
+
+        const buffer = new ArrayBuffer(44 + interleaved.length * 2);
+        const view = new DataView(buffer);
+
+        const writeString = (offset, str) => {
+          for (let i = 0; i < str.length; i++) {
+            view.setUint8(offset + i, str.charCodeAt(i));
+          }
+        };
+
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + interleaved.length * 2, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
+        view.setUint16(20, 1, true);  // AudioFormat (1 = PCM)
+        view.setUint16(22, 2, true);  // NumChannels (2 = stereo)
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 4, true); // ByteRate
+        view.setUint16(32, 4, true);  // BlockAlign
+        view.setUint16(34, 16, true); // BitsPerSample
+        writeString(36, 'data');
+        view.setUint32(40, interleaved.length * 2, true);
+
+        let offset = 44;
+        for (let i = 0; i < interleaved.length; i++, offset += 2) {
+          const s = Math.max(-1, Math.min(1, interleaved[i]));
+          view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        }
+
+        return new Blob([view], { type: 'audio/wav' });
+      }
+
+      encodeMP3() {
+        if (this.lastMp3Blob) return this.lastMp3Blob;
+        if (!this.lastLeft || !this.lastRight) return null;
+
+        const sampleRate = this.lastSampleRate || 44100;
+        const leftInt16 = new Int16Array(this.lastLeft.length);
+        const rightInt16 = new Int16Array(this.lastRight.length);
+
+        for (let i = 0; i < this.lastLeft.length; i++) {
+          const sl = Math.max(-1, Math.min(1, this.lastLeft[i]));
+          const sr = Math.max(-1, Math.min(1, this.lastRight[i]));
+          leftInt16[i] = sl < 0 ? sl * 0x8000 : sl * 0x7FFF;
+          rightInt16[i] = sr < 0 ? sr * 0x8000 : sr * 0x7FFF;
+        }
+
+        if (typeof lamejs !== 'undefined') {
+          const mp3encoder = new lamejs.Mp3Encoder(2, sampleRate, 192);
+          const mp3Data = [];
+          const blockSize = 1152;
+
+          for (let i = 0; i < leftInt16.length; i += blockSize) {
+            const leftChunk = leftInt16.subarray(i, i + blockSize);
+            const rightChunk = rightInt16.subarray(i, i + blockSize);
+            const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+            if (mp3buf.length > 0) {
+              mp3Data.push(mp3buf);
+            }
+          }
+          const flushBuf = mp3encoder.flush();
+          if (flushBuf.length > 0) {
+            mp3Data.push(flushBuf);
+          }
+          this.lastMp3Blob = new Blob(mp3Data, { type: 'audio/mpeg' });
+          return this.lastMp3Blob;
+        }
+        return this.lastWavBlob;
+      }
+
+      pluckString(freq, velocity = 0.85) {
+        this.init();
+        const now = this.ctx.currentTime;
+        const gain = this.ctx.createGain();
+        const filter = this.ctx.createBiquadFilter();
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(freq * 6.5, now);
+        filter.frequency.exponentialRampToValueAtTime(freq * 1.15, now + 1.55);
+        filter.Q.value = 2.8;
+
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        osc1.type = 'triangle';
+        osc2.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(freq, now);
+        osc2.frequency.setValueAtTime(freq * 1.0018, now);
+
+        const osc2Gain = this.ctx.createGain();
+        osc2Gain.gain.value = 0.34;
+
+        // Pick transient burst
+        const bufLen = Math.floor(this.ctx.sampleRate * 0.024);
+        const noiseBuf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
+        const out = noiseBuf.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) {
+          out[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufLen * 0.28));
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = noiseBuf;
+        const nGain = this.ctx.createGain();
+        nGain.gain.setValueAtTime(0.38 * velocity, now);
+        nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.024);
+
+        const amp = Math.min(1, Math.max(0.18, velocity)) * 0.42;
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(amp, now + 0.007);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + 2.2);
+
+        osc1.connect(filter);
+        osc2.connect(osc2Gain);
+        osc2Gain.connect(filter);
+        noise.connect(nGain);
+        nGain.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.master);
+
+        osc1.start(now);
+        osc2.start(now);
+        noise.start(now);
+        osc1.stop(now + 2.25);
+        osc2.stop(now + 2.25);
+      }
+
+      playDrum(type, velocity = 0.9) {
+        this.init();
+        const now = this.ctx.currentTime;
+        const v = Math.min(1, Math.max(0.2, velocity));
+
+        if (type === 'kick') {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.exponentialRampToValueAtTime(35, now + 0.14);
+          osc.frequency.exponentialRampToValueAtTime(27, now + 0.42);
+
+          gain.gain.setValueAtTime(0.92 * v, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.44);
+
+          osc.connect(gain);
+          gain.connect(this.master);
+          osc.start(now);
+          osc.stop(now + 0.46);
+        } else if (type === 'snare') {
+          const osc = this.ctx.createOscillator();
+          const oscGain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(195, now);
+          osc.frequency.exponentialRampToValueAtTime(92, now + 0.11);
+          oscGain.gain.setValueAtTime(0.45 * v, now);
+          oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+          osc.connect(oscGain);
+          oscGain.connect(this.master);
+          osc.start(now);
+          osc.stop(now + 0.16);
+
+          const bufLen = Math.floor(this.ctx.sampleRate * 0.22);
+          const buf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
+
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = buf;
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'highpass';
+          filter.frequency.value = 980;
+          const nGain = this.ctx.createGain();
+          nGain.gain.setValueAtTime(0.46 * v, now);
+          nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.21);
+
+          noise.connect(filter);
+          filter.connect(nGain);
+          nGain.connect(this.master);
+          noise.start(now);
+        } else if (type === 'hihat') {
+          const bufLen = Math.floor(this.ctx.sampleRate * 0.11);
+          const buf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
+
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = buf;
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.value = 8000;
+          filter.Q.value = 1.9;
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.36 * v, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.master);
+          noise.start(now);
+        } else if (type === 'tom') {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(245, now);
+          osc.frequency.exponentialRampToValueAtTime(102, now + 0.27);
+
+          gain.gain.setValueAtTime(0.68 * v, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.31);
+
+          osc.connect(gain);
+          gain.connect(this.master);
+          osc.start(now);
+          osc.stop(now + 0.33);
+        }
+      }
+    }
+
+    const sound = new StudioAudioEngine();
+
+    /* =========================================================================
+       2. THREE.JS 3D STAGE, LIGHTING, STRINGS, DRUMS & KINETIC ORBS
+       ========================================================================= */
+    const container = document.getElementById('webgl-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x07080c, 0.015);
+
+    const camera = new THREE.PerspectiveCamera(
+      50,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      200
+    );
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setClearColor(0x07080c, 1);
+    container.appendChild(renderer.domElement);
+
+    // Studio Lighting
+    const ambientLight = new THREE.AmbientLight(0xdbe4ff, 0.65);
+    scene.add(ambientLight);
+
+    const dirLight1 = new THREE.DirectionalLight(0x48dbfb, 1.15);
+    dirLight1.position.set(12, 18, 16);
+    scene.add(dirLight1);
+
+    const dirLight2 = new THREE.DirectionalLight(0xff6b6b, 0.85);
+    dirLight2.position.set(-15, -10, 12);
+    scene.add(dirLight2);
+
+    // Subtle 3D reference grid behind instruments
+    const gridHelper = new THREE.GridHelper(38, 38, 0x1e2436, 0x121622);
+    gridHelper.rotation.x = Math.PI / 2;
+    gridHelper.position.set(0, 1.5, -2.5);
+    scene.add(gridHelper);
+
+    // 3D Visual Control State
+    const visualParams = {
+      depthExtrusion: 1.0,
+      waveAmp: 1.2,
+      orbSpeed: 1.0,
+      fov: 50,
+      wireframe: false,
+      cameraMode: 'stage',
+      spherical: {
+        radius: 21,
+        theta: 0,
+        phi: Math.PI / 2,
+        targetTheta: 0,
+        targetPhi: Math.PI / 2,
+        targetRadius: 21
+      }
+    };
+
+    const cameraTarget = new THREE.Vector3(0, 0.4, 0);
+
+    // World bounds for the playable 3D instrument plane (Z = 0 plane)
+    const STAGE_BOUNDS = {
+      minX: -12.5,
+      maxX: 12.5,
+      minY: -3.2,
+      maxY: 6.4
+    };
+
+    const TUNINGS = {
+      pentatonic: [
+        { name: 'E4', freq: 329.63, staffStep: 8,  color: '#ff6b6b', hex: 0xff6b6b },
+        { name: 'D4', freq: 293.66, staffStep: 7,  color: '#feca57', hex: 0xfeca57 },
+        { name: 'B3', freq: 246.94, staffStep: 5,  color: '#48dbfb', hex: 0x48dbfb },
+        { name: 'A3', freq: 220.00, staffStep: 4,  color: '#1dd1a1', hex: 0x1dd1a1 },
+        { name: 'G3', freq: 196.00, staffStep: 3,  color: '#a29bfe', hex: 0xa29bfe },
+        { name: 'E3', freq: 164.81, staffStep: 1,  color: '#ff9ff3', hex: 0xff9ff3 }
+      ],
+      standard: [
+        { name: 'E4', freq: 329.63, staffStep: 8,  color: '#ff6b6b', hex: 0xff6b6b },
+        { name: 'B3', freq: 246.94, staffStep: 5,  color: '#feca57', hex: 0xfeca57 },
+        { name: 'G3', freq: 196.00, staffStep: 3,  color: '#48dbfb', hex: 0x48dbfb },
+        { name: 'D3', freq: 146.83, staffStep: 0,  color: '#1dd1a1', hex: 0x1dd1a1 },
+        { name: 'A2', freq: 110.00, staffStep: -2, color: '#a29bfe', hex: 0xa29bfe },
+        { name: 'E2', freq: 82.41,  staffStep: -4, color: '#ff9ff3', hex: 0xff9ff3 }
+      ]
+    };
+
+    let currentTuningKey = 'pentatonic';
+    let orbitMode = true;
+
+    const strings3D = [];
+    const drums3D = [];
+    const movers3D = [];
+    const shockwaves3D = [];
+    const particles3D = [];
+    const sheetNotes = [];
+
+    const instrumentsGroup = new THREE.Group();
+    scene.add(instrumentsGroup);
+
+    function makeTextSprite(text, colorStr) {
+      const c = document.createElement('canvas');
+      c.width = 128;
+      c.height = 64;
+      const cx = c.getContext('2d');
+      cx.font = '700 28px Inter, sans-serif';
+      cx.fillStyle = colorStr;
+      cx.textAlign = 'center';
+      cx.textBaseline = 'middle';
+      cx.fillText(text, 64, 32);
+
+      const tex = new THREE.CanvasTexture(c);
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.85 });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(1.5, 0.75, 1);
+      return sprite;
+    }
+
+    function build3DInstruments() {
+      // Clear previous meshes
+      while (instrumentsGroup.children.length > 0) {
+        const obj = instrumentsGroup.children[0];
+        instrumentsGroup.remove(obj);
+      }
+      strings3D.length = 0;
+      drums3D.length = 0;
+
+      const tuning = TUNINGS[currentTuningKey];
+      const strX1 = -10.8;
+      const strX2 = 1.4;
+      const segments = 44;
+
+      // 1. Create 6 3D Guitar Strings on Left/Center
+      for (let i = 0; i < 6; i++) {
+        const y = 5.2 - i * 1.42;
+        const zOffset = (i - 2.5) * 0.22 * visualParams.depthExtrusion;
+
+        const positions = new Float32Array((segments + 1) * 3);
+        for (let s = 0; s <= segments; s++) {
+          const t = s / segments;
+          positions[s * 3] = strX1 + t * (strX2 - strX1);
+          positions[s * 3 + 1] = y;
+          positions[s * 3 + 2] = zOffset;
+        }
+
+        const geom = new THREE.BufferGeometry();
+        geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const mat = new THREE.LineBasicMaterial({
+          color: tuning[i].hex,
+          transparent: true,
+          opacity: 0.75
+        });
+
+        const line = new THREE.Line(geom, mat);
+        instrumentsGroup.add(line);
+
+        // Glowing core cylinder posts at string ends
+        const postGeo = new THREE.SphereGeometry(0.14, 16, 16);
+        const postMat = new THREE.MeshStandardMaterial({
+          color: tuning[i].hex,
+          emissive: tuning[i].hex,
+          emissiveIntensity: 0.5,
+          roughness: 0.2,
+          metalness: 0.8
+        });
+        const pinL = new THREE.Mesh(postGeo, postMat);
+        pinL.position.set(strX1, y, zOffset);
+        const pinR = pinL.clone();
+        pinR.position.set(strX2, y, zOffset);
+        instrumentsGroup.add(pinL, pinR);
+
+        // Floating 3D Pitch Label
+        const labelSprite = makeTextSprite(tuning[i].name, tuning[i].color);
+        labelSprite.position.set(strX1 - 0.95, y, zOffset);
+        instrumentsGroup.add(labelSprite);
+
+        strings3D.push({
+          index: i,
+          x1: strX1,
+          x2: strX2,
+          y: y,
+          baseZ: zOffset,
+          ctrlX: (strX1 + strX2) * 0.5,
+          dispY: 0,
+          dispZ: 0,
+          vy: 0,
+          vz: 0,
+          energy: 0,
+          segments,
+          line,
+          mat,
+          pinL,
+          pinR,
+          note: tuning[i].name,
+          freq: tuning[i].freq,
+          staffStep: tuning[i].staffStep,
+          color: tuning[i].color,
+          hex: tuning[i].hex,
+          cooldown: 0
+        });
+      }
+
+      // 2. Create 4 3D Geometric Drum Shapes on Right
+      const drumSpecs = [
+        {
+          id: 'kick',
+          label: 'KICK',
+          x: 5.4,
+          y: -0.4,
+          z: 0.5,
+          radius: 1.4,
+          color: '#ff0000',
+          hex: 0xff0000,
+          staffStep: 1,
+          percussion: 'solid',
+          geo: new THREE.TorusGeometry(0.92, 0.34, 20, 42)
+        },
+        {
+          id: 'snare',
+          label: 'SNARE',
+          x: 9.4,
+          y: -0.4,
+          z: 0.5,
+          radius: 1.4,
+          color: '#48dbfb',
+          hex: 0x48dbfb,
+          staffStep: 5,
+          percussion: 'cross',
+          geo: new THREE.OctahedronGeometry(1.33, 0)
+        },
+        {
+          id: 'hihat',
+          label: 'HI-HAT',
+          x: 5.6,
+          y: 3.6,
+          z: 0.3,
+          radius: 1.4,
+          color: '#fda500',
+          hex: 0xfda500,
+          staffStep: 5,
+          percussion: 'cross',
+          geo: new THREE.ConeGeometry(1.12, 1.5, 4)
+        },
+        {
+          id: 'tom',
+          label: 'TOM',
+          x: 9.4,
+          y: 3.6,
+          z: 0.5,
+          radius: 1.4,
+          color: '#00ff00',
+          hex: 0x00ff00,
+          staffStep: 6,
+          percussion: 'solid',
+          geo: new THREE.CylinderGeometry(1.0, 1.0, 1.5, 6)
+        }
+      ];
+
+      drumSpecs.forEach(spec => {
+        const group = new THREE.Group();
+        const zPos = spec.z * visualParams.depthExtrusion;
+        group.position.set(spec.x, spec.y, zPos);
+
+        const mat = new THREE.MeshStandardMaterial({
+          color: spec.hex,
+          emissive: spec.hex,
+          emissiveIntensity: 0.28,
+          roughness: 0.25,
+          metalness: 0.65,
+          wireframe: visualParams.wireframe
+        });
+
+        const mesh = new THREE.Mesh(spec.geo, mat);
+        group.add(mesh);
+
+        // Wireframe cage overlay for depth clarity
+        const cageGeo = new THREE.EdgesGeometry(spec.geo);
+        const cageMat = new THREE.LineBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.32
+        });
+        const cage = new THREE.LineSegments(cageGeo, cageMat);
+        mesh.add(cage);
+
+        // Proximity trigger halo ring
+        const ringGeo = new THREE.RingGeometry(spec.radius + 0.22, spec.radius + 0.28, 48);
+        const ringMat = new THREE.MeshBasicMaterial({
+          color: spec.hex,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.24
+        });
+        const halo = new THREE.Mesh(ringGeo, ringMat);
+        group.add(halo);
+
+        const label = makeTextSprite(spec.label, spec.color);
+        label.position.set(0, -spec.radius - 0.55, 0);
+        group.add(label);
+
+        instrumentsGroup.add(group);
+
+        drums3D.push({
+          ...spec,
+          baseZ: spec.z,
+          group,
+          mesh,
+          mat,
+          halo,
+          scale: 1,
+          vScale: 0,
+          glow: 0,
+          rotSpeedX: 0.006,
+          rotSpeedY: 0.009,
+          cooldown: 0
+        });
+      });
+    }
+
+    /* =========================================================================
+       3. TRIGGERING 3D FX, SOUND & BOTTOM SHEET MUSIC NOTATION
+       ========================================================================= */
+    function pushSheetNote(item) {
+      sheetNotes.push({
+        label: item.label,
+        staffStep: item.staffStep,
+        color: item.color,
+        percussion: item.percussion || null,
+        freq: item.freq || null,
+        drumId: item.drumId || null,
+        scale: 0.01,
+        vScale: 0.28,
+        glow: 1.0
+      });
+      if (sheetNotes.length > 48) {
+        sheetNotes.shift();
+      }
+    }
+
+    function spawn3DBurst(x, y, z, hexColor, count = 10, maxRing = 2.2) {
+      // Expanding 3D shockwave ring
+      const ringGeo = new THREE.RingGeometry(0.18, 0.28, 36);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: hexColor,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.9
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.set(x, y, z);
+      scene.add(ring);
+      shockwaves3D.push({ mesh: ring, mat: ringMat, scale: 1, maxScale: maxRing * 4, alpha: 0.9 });
+
+      // 3D Sparks
+      const pGeo = new THREE.SphereGeometry(0.08, 8, 8);
+      for (let i = 0; i < count; i++) {
+        const pMat = new THREE.MeshBasicMaterial({
+          color: hexColor,
+          transparent: true,
+          opacity: 1
+        });
+        const pMesh = new THREE.Mesh(pGeo, pMat);
+        pMesh.position.set(x, y, z);
+        const theta = Math.random() * Math.PI * 2;
+        const phi = (Math.random() - 0.5) * Math.PI;
+        const spd = 0.06 + Math.random() * 0.14;
+        scene.add(pMesh);
+        particles3D.push({
+          mesh: pMesh,
+          mat: pMat,
+          vx: Math.cos(theta) * Math.cos(phi) * spd,
+          vy: Math.sin(theta) * Math.cos(phi) * spd,
+          vz: Math.sin(phi) * spd,
+          alpha: 1
+        });
+      }
+    }
+
+    function triggerString3D(str, hitX, velocity = 0.85, dirY = 1) {
+      if (str.cooldown > 0) return;
+      str.cooldown = 8;
+      str.ctrlX = Math.max(str.x1 + 0.5, Math.min(str.x2 - 0.5, hitX));
+
+      const amp = Math.min(1.15, Math.max(0.35, velocity * 0.9)) * visualParams.waveAmp;
+      str.vy = (dirY >= 0 ? 1 : -1) * amp;
+      str.vz = (Math.random() - 0.5) * amp * 0.85;
+      str.energy = 1.0;
+
+      sound.pluckString(str.freq, velocity);
+      spawn3DBurst(str.ctrlX, str.y, str.baseZ * visualParams.depthExtrusion, str.hex, 7, 1.5);
+
+      pushSheetNote({
+        label: str.note,
+        staffStep: str.staffStep,
+        color: str.color,
+        freq: str.freq
+      });
+    }
+
+    function triggerDrum3D(drum, velocity = 0.9) {
+      if (drum.cooldown > 0) return;
+      drum.cooldown = 12;
+      drum.vScale = 0.38;
+      drum.glow = 1.0;
+      drum.rotSpeedX = 0.09;
+      drum.rotSpeedY = 0.12;
+
+      sound.playDrum(drum.id, velocity);
+      spawn3DBurst(
+        drum.group.position.x,
+        drum.group.position.y,
+        drum.group.position.z,
+        drum.hex,
+        12,
+        2.4
+      );
+
+      pushSheetNote({
+        label: drum.label,
+        staffStep: drum.staffStep,
+        color: drum.color,
+        percussion: drum.percussion,
+        drumId: drum.id
+      });
+    }
+
+    /* =========================================================================
+       4. 3D KINETIC ORBS ("MOVERS") & INTERSECTION DETECTION
+       ========================================================================= */
+    function spawn3DMover(x, y, vx, vy) {
+      const mx = x !== undefined ? x : (Math.random() - 0.5) * 14;
+      const my = y !== undefined ? y : 0.5 + (Math.random() - 0.5) * 6;
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 0.16 + Math.random() * 0.06;
+
+      const orbGeo = new THREE.SphereGeometry(0.26, 24, 24);
+      const orbMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0x48dbfb,
+        emissiveIntensity: 0.9,
+        roughness: 0.1
+      });
+      const mesh = new THREE.Mesh(orbGeo, orbMat);
+      mesh.position.set(mx, my, 0);
+      scene.add(mesh);
+
+      // Trail line in 3D space
+      const trailLen = 22;
+      const trailPositions = new Float32Array(trailLen * 3);
+      for (let i = 0; i < trailLen; i++) {
+        trailPositions[i * 3] = mx;
+        trailPositions[i * 3 + 1] = my;
+        trailPositions[i * 3 + 2] = 0;
+      }
+      const trailGeo = new THREE.BufferGeometry();
+      trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+      const trailMat = new THREE.LineBasicMaterial({
+        color: 0x48dbfb,
+        transparent: true,
+        opacity: 0.48
+      });
+      const trailLine = new THREE.Line(trailGeo, trailMat);
+      scene.add(trailLine);
+
+      movers3D.push({
+        x: mx,
+        y: my,
+        z: 0,
+        px: mx,
+        py: my,
+        vx: vx !== undefined ? vx : Math.cos(angle) * speed,
+        vy: vy !== undefined ? vy : Math.sin(angle) * speed,
+        phase: Math.random() * Math.PI * 2,
+        mesh,
+        trailLine,
+        trailHistory: Array.from({ length: trailLen }, () => ({ x: mx, y: my, z: 0 }))
+      });
+    }
+
+    function checkSegmentStringHit(x1, y1, x2, y2, str) {
+      if ((y1 <= str.y && y2 > str.y) || (y1 >= str.y && y2 < str.y)) {
+        const t = (str.y - y1) / (y2 - y1);
+        const ix = x1 + t * (x2 - x1);
+        if (ix >= str.x1 && ix <= str.x2) {
+          return { hit: true, x: ix, dirY: y2 - y1 };
+        }
+      }
+      return { hit: false };
+    }
+
+    function checkSegmentDrumPass(x1, y1, x2, y2, drum) {
+      const triggerR = drum.radius + 0.42;
+      const d1 = Math.hypot(x1 - drum.x, y1 - drum.y);
+      const d2 = Math.hypot(x2 - drum.x, y2 - drum.y);
+      return d1 > triggerR && d2 <= triggerR;
+    }
+
+    /* =========================================================================
+       5. 3D RAYCASTING, CAMERA ORBIT & POINTER INTERACTION
+       ========================================================================= */
+    const raycaster = new THREE.Raycaster();
+    const ndcPointer = new THREE.Vector2();
+    const interactionPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    const planeIntersect = new THREE.Vector3();
+
+    const pointer3D = {
+      x: null,
+      y: null,
+      px: null,
+      py: null,
+      down: false,
+      rightDown: false,
+      startX: 0,
+      startY: 0,
+      lastScreenX: 0,
+      lastScreenY: 0
+    };
+
+    function screenToWorldPlane(clientX, clientY) {
+      ndcPointer.x = (clientX / window.innerWidth) * 2 - 1;
+      ndcPointer.y = -(clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(ndcPointer, camera);
+      raycaster.ray.intersectPlane(interactionPlane, planeIntersect);
+      return planeIntersect;
+    }
+
+    // Prevent context menu on right-drag orbit
+    window.addEventListener('contextmenu', e => e.preventDefault());
+
+    container.addEventListener('pointerdown', e => {
+      sound.init();
+      pointer3D.lastScreenX = e.clientX;
+      pointer3D.lastScreenY = e.clientY;
+
+      if (e.button === 2 || e.shiftKey) {
+        pointer3D.rightDown = true;
+        visualParams.cameraMode = 'manual';
+        updateCamPresetButtons('');
+        return;
+      }
+
+      pointer3D.down = true;
+      const pt = screenToWorldPlane(e.clientX, e.clientY);
+      pointer3D.x = pt.x;
+      pointer3D.y = pt.y;
+      pointer3D.px = pt.x;
+      pointer3D.py = pt.y;
+      pointer3D.startX = pt.x;
+      pointer3D.startY = pt.y;
+
+      // Direct click on any 3D drum shape
+      drums3D.forEach(drum => {
+        if (Math.hypot(pt.x - drum.x, pt.y - drum.y) <= drum.radius + 0.35) {
+          triggerDrum3D(drum, 0.95);
+        }
+      });
+    });
+
+    window.addEventListener('pointermove', e => {
+      // Right-button or Shift drag rotates the 3D camera
+      if (pointer3D.rightDown) {
+        const dx = e.clientX - pointer3D.lastScreenX;
+        const dy = e.clientY - pointer3D.lastScreenY;
+        pointer3D.lastScreenX = e.clientX;
+        pointer3D.lastScreenY = e.clientY;
+
+        visualParams.spherical.targetTheta -= dx * 0.0065;
+        visualParams.spherical.targetPhi = Math.max(
+          0.35,
+          Math.min(Math.PI - 0.35, visualParams.spherical.targetPhi - dy * 0.0065)
+        );
+        return;
+      }
+
+      const pt = screenToWorldPlane(e.clientX, e.clientY);
+      if (pointer3D.x === null) {
+        pointer3D.x = pt.x;
+        pointer3D.y = pt.y;
+      }
+      pointer3D.px = pointer3D.x;
+      pointer3D.py = pointer3D.y;
+      pointer3D.x = pt.x;
+      pointer3D.y = pt.y;
+
+      const vel = Math.min(1, Math.hypot(pointer3D.x - pointer3D.px, pointer3D.y - pointer3D.py) * 1.4);
+
+      // Swiping cursor across 3D strings plucks them
+      strings3D.forEach(str => {
+        const hit = checkSegmentStringHit(pointer3D.px, pointer3D.py, pointer3D.x, pointer3D.y, str);
+        if (hit.hit) {
+          triggerString3D(str, hit.x, Math.max(0.5, vel), hit.dirY);
+        }
+      });
+
+      // Swiping cursor past 3D drum shapes strikes them
+      drums3D.forEach(drum => {
+        if (checkSegmentDrumPass(pointer3D.px, pointer3D.py, pointer3D.x, pointer3D.y, drum)) {
+          triggerDrum3D(drum, Math.max(0.55, vel));
+        }
+      });
+    });
+
+    window.addEventListener('pointerup', e => {
+      if (pointer3D.rightDown) {
+        pointer3D.rightDown = false;
+        return;
+      }
+      if (!pointer3D.down) return;
+      pointer3D.down = false;
+
+      const pt = screenToWorldPlane(e.clientX, e.clientY);
+      const dx = pt.x - pointer3D.startX;
+      const dy = pt.y - pointer3D.startY;
+      const dist = Math.hypot(dx, dy);
+
+      // Flick gesture in open 3D stage launches a new kinetic orb
+      if (dist > 1.2 && e.clientY < window.innerHeight - 180 && e.clientY > 75) {
+        const vx = Math.max(-0.28, Math.min(0.28, dx * 0.045));
+        const vy = Math.max(-0.28, Math.min(0.28, dy * 0.045));
+        spawn3DMover(pt.x, pt.y, vx, vy);
+      }
+    });
+
+    container.addEventListener('wheel', e => {
+      e.preventDefault();
+      visualParams.spherical.targetRadius = Math.max(
+        11,
+        Math.min(34, visualParams.spherical.targetRadius + e.deltaY * 0.012)
+      );
+    }, { passive: false });
+
+    /* =========================================================================
+       6. BOTTOM 2D SHEET MUSIC CANVAS RENDERER
+       ========================================================================= */
+    const staffCanvas = document.getElementById('staff-canvas');
+    const sCtx = staffCanvas.getContext('2d');
+
+    function resizeStaffCanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      staffCanvas.width = window.innerWidth * dpr;
+      staffCanvas.height = 175 * dpr;
+      sCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function renderSheetMusic() {
+      const w = window.innerWidth;
+      const h = 175;
+      sCtx.clearRect(0, 0, w, h);
+
+      const marginX = Math.max(36, w * 0.055);
+      const staffWidth = w - marginX * 2;
+      const lineSpacing = 13;
+      const firstLineY = 42;
+      const bottomLineY = firstLineY + lineSpacing * 4;
+
+      // Glassmorphic staff container
+      sCtx.save();
+      sCtx.fillStyle = 'rgba(13, 15, 23, 0.82)';
+      sCtx.strokeStyle = 'rgba(255, 255, 255, 0.09)';
+      sCtx.lineWidth = 1;
+      sCtx.beginPath();
+      sCtx.roundRect(marginX - 16, 10, staffWidth + 32, 144, 18);
+      sCtx.fill();
+      sCtx.stroke();
+
+      // 5 Staff Lines
+      sCtx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+      for (let i = 0; i < 5; i++) {
+        const y = firstLineY + i * lineSpacing;
+        sCtx.beginPath();
+        sCtx.moveTo(marginX, y);
+        sCtx.lineTo(marginX + staffWidth, y);
+        sCtx.stroke();
+      }
+
+      // Clef Symbol
+      sCtx.font = '38px serif';
+      sCtx.fillStyle = 'rgba(255, 255, 255, 0.68)';
+      sCtx.textAlign = 'left';
+      sCtx.fillText('𝄞', marginX + 10, bottomLineY - 4);
+
+      const startNotesX = marginX + 64;
+      const noteSpacing = 38;
+      const maxVisibleNotes = Math.max(8, Math.floor((staffWidth - 85) / noteSpacing));
+      const visibleNotes = sheetNotes.slice(-maxVisibleNotes);
+
+      if (visibleNotes.length === 0) {
+        sCtx.font = '400 12px Inter, sans-serif';
+        sCtx.fillStyle = 'rgba(255, 255, 255, 0.30)';
+        sCtx.textAlign = 'center';
+        sCtx.fillText(
+          'Live notation engraves here as 3D orbs & cursor pass strings and drums...',
+          w * 0.5,
+          firstLineY + lineSpacing * 2 + 4
+        );
+      }
+
+      visibleNotes.forEach((n, idx) => {
+        const ds = 1 - n.scale;
+        n.vScale += ds * 0.26;
+        n.vScale *= 0.76;
+        n.scale += n.vScale;
+        n.glow *= 0.94;
+
+        const nx = startNotesX + idx * noteSpacing;
+        const ny = bottomLineY - (n.staffStep - 1) * (lineSpacing / 2);
+
+        // Measure bar every 4 notes
+        if (idx > 0 && idx % 4 === 0) {
+          const barX = nx - noteSpacing * 0.5;
+          sCtx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+          sCtx.beginPath();
+          sCtx.moveTo(barX, firstLineY);
+          sCtx.lineTo(barX, bottomLineY);
+          sCtx.stroke();
+        }
+
+        // Ledger lines
+        sCtx.strokeStyle = 'rgba(255, 255, 255, 0.36)';
+        sCtx.lineWidth = 1.2;
+        if (n.staffStep <= -1) {
+          for (let s = -1; s >= n.staffStep; s -= 2) {
+            const ly = bottomLineY - (s - 1) * (lineSpacing / 2);
+            sCtx.beginPath();
+            sCtx.moveTo(nx - 10, ly);
+            sCtx.lineTo(nx + 10, ly);
+            sCtx.stroke();
+          }
+        } else if (n.staffStep >= 11) {
+          for (let s = 11; s <= n.staffStep; s += 2) {
+            const ly = bottomLineY - (s - 1) * (lineSpacing / 2);
+            sCtx.beginPath();
+            sCtx.moveTo(nx - 10, ly);
+            sCtx.lineTo(nx + 10, ly);
+            sCtx.stroke();
+          }
+        }
+
+        sCtx.save();
+        sCtx.translate(nx, ny);
+        sCtx.scale(n.scale, n.scale);
+
+        if (n.glow > 0.05) {
+          sCtx.shadowColor = n.color;
+          sCtx.shadowBlur = 14 * n.glow;
+        }
+
+        sCtx.strokeStyle = n.color;
+        sCtx.fillStyle = n.color;
+        sCtx.lineWidth = 2;
+
+        // Stem
+        const stemUp = n.staffStep < 5;
+        sCtx.beginPath();
+        if (stemUp) {
+          sCtx.moveTo(5.5, 0);
+          sCtx.lineTo(5.5, -28);
+        } else {
+          sCtx.moveTo(-5.5, 0);
+          sCtx.lineTo(-5.5, 28);
+        }
+        sCtx.stroke();
+
+        // Notehead
+        if (n.percussion === 'cross') {
+          const r = 5.5;
+          sCtx.lineWidth = 2.2;
+          sCtx.beginPath();
+          sCtx.moveTo(-r, -r);
+          sCtx.lineTo(r, r);
+          sCtx.moveTo(r, -r);
+          sCtx.lineTo(-r, r);
+          sCtx.stroke();
+        } else {
+          sCtx.beginPath();
+          sCtx.ellipse(0, 0, 6.8, 4.8, -0.32, 0, Math.PI * 2);
+          sCtx.fill();
+        }
+        sCtx.restore();
+
+        // Pitch / Percussion Caption
+        sCtx.font = '600 9.5px Inter, sans-serif';
+        sCtx.fillStyle = n.color;
+        sCtx.textAlign = 'center';
+        sCtx.fillText(n.label, nx, bottomLineY + 34);
+      });
+
+      sCtx.restore();
+    }
+
+    /* =========================================================================
+       7. MAIN 3D ANIMATION & PHYSICS LOOP
+       ========================================================================= */
+    let clockTime = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      clockTime += 0.016;
+
+      // 1. Update Camera Spherical Orbit & Presets
+      if (visualParams.cameraMode === 'cinematic') {
+        visualParams.spherical.targetTheta = Math.sin(clockTime * 0.35) * 0.55;
+        visualParams.spherical.targetPhi = Math.PI / 2 - 0.18 + Math.cos(clockTime * 0.25) * 0.15;
+      }
+
+      const sp = visualParams.spherical;
+      sp.theta += (sp.targetTheta - sp.theta) * 0.08;
+      sp.phi += (sp.targetPhi - sp.phi) * 0.08;
+      sp.radius += (sp.targetRadius - sp.radius) * 0.08;
+
+      camera.position.x = cameraTarget.x + sp.radius * Math.sin(sp.phi) * Math.sin(sp.theta);
+      camera.position.y = cameraTarget.y + sp.radius * Math.cos(sp.phi);
+      camera.position.z = cameraTarget.z + sp.radius * Math.sin(sp.phi) * Math.cos(sp.theta);
+      camera.lookAt(cameraTarget);
+
+      // 2. Update 3D Guitar Strings (Harmonic Standing Wave in Y and Z)
+      strings3D.forEach(str => {
+        if (str.cooldown > 0) str.cooldown--;
+
+        str.vy += -str.dispY * 0.28;
+        str.vy *= 0.90;
+        str.dispY += str.vy;
+
+        str.vz += -str.dispZ * 0.26;
+        str.vz *= 0.90;
+        str.dispZ += str.vz;
+
+        str.energy *= 0.95;
+
+        const zBase = str.baseZ * visualParams.depthExtrusion;
+        str.pinL.position.z = zBase;
+        str.pinR.position.z = zBase;
+
+        const posAttr = str.line.geometry.attributes.position;
+        const arr = posAttr.array;
+
+        for (let s = 0; s <= str.segments; s++) {
+          const t = s / str.segments;
+          const env = Math.sin(t * Math.PI);
+          const harmonic = Math.sin(t * Math.PI * 2 + clockTime * 28) * 0.18 * str.energy;
+          arr[s * 3 + 1] = str.y + (str.dispY + harmonic) * env;
+          arr[s * 3 + 2] = zBase + str.dispZ * env;
+        }
+        posAttr.needsUpdate = true;
+        str.mat.opacity = 0.65 + str.energy * 0.35;
+      });
+
+      // 3. Update 3D Geometric Drum Shapes
+      drums3D.forEach(drum => {
+        if (drum.cooldown > 0) drum.cooldown--;
+
+        const ds = 1 - drum.scale;
+        drum.vScale += ds * 0.22;
+        drum.vScale *= 0.80;
+        drum.scale += drum.vScale;
+        drum.glow *= 0.93;
+
+        drum.rotSpeedX += (0.005 - drum.rotSpeedX) * 0.07;
+        drum.rotSpeedY += (0.008 - drum.rotSpeedY) * 0.07;
+
+        drum.mesh.rotation.x += drum.rotSpeedX;
+        drum.mesh.rotation.y += drum.rotSpeedY;
+
+        drum.group.position.z = drum.baseZ * visualParams.depthExtrusion;
+        drum.group.scale.setScalar(drum.scale);
+        drum.mat.emissiveIntensity = 0.25 + drum.glow * 0.95;
+        drum.halo.rotation.z -= 0.005;
+      });
+
+      // 4. Update 3D Kinetic Orbs
+      movers3D.forEach(m => {
+        m.px = m.x;
+        m.py = m.y;
+
+        if (orbitMode) {
+          const cx = -0.5;
+          const cy = 1.6;
+          m.vx += (cx - m.x) * 0.00045;
+          m.vy += (cy - m.y) * 0.00065;
+
+          const spd = Math.hypot(m.vx, m.vy);
+          const targetSpd = 0.18 * visualParams.orbSpeed;
+          if (spd > 0.001) {
+            m.vx += (m.vx / spd) * (targetSpd - spd) * 0.05;
+            m.vy += (m.vy / spd) * (targetSpd - spd) * 0.05;
+          }
+        }
+
+        m.x += m.vx * visualParams.orbSpeed;
+        m.y += m.vy * visualParams.orbSpeed;
+        m.z = Math.sin(clockTime * 3.2 + m.phase) * 0.9 * visualParams.depthExtrusion;
+
+        if (m.x < STAGE_BOUNDS.minX) { m.x = STAGE_BOUNDS.minX; m.vx *= -1; }
+        if (m.x > STAGE_BOUNDS.maxX) { m.x = STAGE_BOUNDS.maxX; m.vx *= -1; }
+        if (m.y < STAGE_BOUNDS.minY) { m.y = STAGE_BOUNDS.minY; m.vy *= -1; }
+        if (m.y > STAGE_BOUNDS.maxY) { m.y = STAGE_BOUNDS.maxY; m.vy *= -1; }
+
+        m.mesh.position.set(m.x, m.y, m.z);
+
+        // Check intersections with 3D Strings
+        const speedNorm = Math.min(1, Math.hypot(m.vx, m.vy) * 4.5);
+        strings3D.forEach(str => {
+          const hit = checkSegmentStringHit(m.px, m.py, m.x, m.y, str);
+          if (hit.hit) {
+            triggerString3D(str, hit.x, speedNorm, hit.dirY);
+          }
+        });
+
+        // Check passage past 3D Drum Shapes
+        drums3D.forEach(drum => {
+          if (checkSegmentDrumPass(m.px, m.py, m.x, m.y, drum)) {
+            triggerDrum3D(drum, speedNorm);
+          }
+        });
+
+        // Update 3D Trail
+        m.trailHistory.push({ x: m.x, y: m.y, z: m.z });
+        m.trailHistory.shift();
+        const tAttr = m.trailLine.geometry.attributes.position;
+        for (let i = 0; i < m.trailHistory.length; i++) {
+          const pt = m.trailHistory[i];
+          tAttr.array[i * 3] = pt.x;
+          tAttr.array[i * 3 + 1] = pt.y;
+          tAttr.array[i * 3 + 2] = pt.z;
+        }
+        tAttr.needsUpdate = true;
+      });
+
+      // 5. Update 3D Shockwave Rings & Particles
+      for (let i = shockwaves3D.length - 1; i >= 0; i--) {
+        const sw = shockwaves3D[i];
+        sw.scale += (sw.maxScale - sw.scale) * 0.14;
+        sw.alpha *= 0.90;
+        sw.mesh.scale.setScalar(sw.scale);
+        sw.mat.opacity = sw.alpha;
+        if (sw.alpha < 0.02) {
+          scene.remove(sw.mesh);
+          sw.mesh.geometry.dispose();
+          sw.mat.dispose();
+          shockwaves3D.splice(i, 1);
+        }
+      }
+
+      for (let i = particles3D.length - 1; i >= 0; i--) {
+        const p = particles3D[i];
+        p.mesh.position.x += p.vx;
+        p.mesh.position.y += p.vy;
+        p.mesh.position.z += p.vz;
+        p.vx *= 0.94;
+        p.vy *= 0.94;
+        p.vz *= 0.94;
+        p.alpha *= 0.90;
+        p.mat.opacity = p.alpha;
+        if (p.alpha < 0.03) {
+          scene.remove(p.mesh);
+          p.mat.dispose();
+          particles3D.splice(i, 1);
+        }
+      }
+
+      renderer.render(scene, camera);
+      renderSheetMusic();
+    }
+
+    /* =========================================================================
+       8. UI EVENT LISTENERS (3D VISUAL CONTROLS & AUDIO RECORD/EXPORT)
+       ========================================================================= */
+    document.getElementById('btnSpawn').addEventListener('click', () => {
+      sound.init();
+      spawn3DMover();
+    });
+
+    const btnOrbit = document.getElementById('btnOrbit');
+    btnOrbit.addEventListener('click', () => {
+      orbitMode = !orbitMode;
+      btnOrbit.textContent = orbitMode ? 'Flow: Orbit' : 'Flow: Bounce';
+      btnOrbit.classList.toggle('active', orbitMode);
+    });
+
+    const btnTuning = document.getElementById('btnTuning');
+    btnTuning.addEventListener('click', () => {
+      currentTuningKey = currentTuningKey === 'pentatonic' ? 'standard' : 'pentatonic';
+      btnTuning.textContent =
+        currentTuningKey === 'pentatonic' ? 'Tuning: Pentatonic' : 'Tuning: Standard';
+      build3DInstruments();
+    });
+
+    document.getElementById('btnPlayScore').addEventListener('click', () => {
+      sound.init();
+      const visible = sheetNotes.slice(-16);
+      visible.forEach((n, i) => {
+        setTimeout(() => {
+          n.vScale = 0.35;
+          n.glow = 1.0;
+          if (n.freq) {
+            sound.pluckString(n.freq, 0.85);
+          } else if (n.drumId) {
+            sound.playDrum(n.drumId, 0.9);
+          }
+        }, i * 210);
+      });
+    });
+
+    document.getElementById('btnClear').addEventListener('click', () => {
+      movers3D.forEach(m => {
+        scene.remove(m.mesh);
+        scene.remove(m.trailLine);
+      });
+      movers3D.length = 0;
+      sheetNotes.length = 0;
+    });
+
+    // 3D Web Visual Controls Panel
+    const panel3D = document.getElementById('panel3D');
+    const btn3DControls = document.getElementById('btn3DControls');
+    btn3DControls.addEventListener('click', () => {
+      panel3D.classList.toggle('hidden');
+      btn3DControls.classList.toggle('active', !panel3D.classList.contains('hidden'));
+    });
+    document.getElementById('btnClose3D').addEventListener('click', () => {
+      panel3D.classList.add('hidden');
+      btn3DControls.classList.remove('active');
+    });
+
+    function updateCamPresetButtons(mode) {
+      document.querySelectorAll('.cam-preset').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.cam === mode);
+      });
+    }
+
+    document.querySelectorAll('.cam-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.cam;
+        visualParams.cameraMode = mode;
+        updateCamPresetButtons(mode);
+        if (mode === 'stage') {
+          visualParams.spherical.targetTheta = 0;
+          visualParams.spherical.targetPhi = Math.PI / 2;
+          visualParams.spherical.targetRadius = 21;
+        } else if (mode === 'iso') {
+          visualParams.spherical.targetTheta = -0.52;
+          visualParams.spherical.targetPhi = 1.18;
+          visualParams.spherical.targetRadius = 22.5;
+        } else if (mode === 'top') {
+          visualParams.spherical.targetTheta = 0;
+          visualParams.spherical.targetPhi = 0.65;
+          visualParams.spherical.targetRadius = 24;
+        }
+      });
+    });
+
+    document.getElementById('sliderDepth').addEventListener('input', e => {
+      visualParams.depthExtrusion = parseFloat(e.target.value);
+      document.getElementById('valDepth').textContent = visualParams.depthExtrusion.toFixed(1) + 'x';
+    });
+
+    document.getElementById('sliderWave').addEventListener('input', e => {
+      visualParams.waveAmp = parseFloat(e.target.value);
+      document.getElementById('valWave').textContent = visualParams.waveAmp.toFixed(1) + 'x';
+    });
+
+    document.getElementById('sliderSpeed').addEventListener('input', e => {
+      visualParams.orbSpeed = parseFloat(e.target.value);
+      document.getElementById('valSpeed').textContent = visualParams.orbSpeed.toFixed(1) + 'x';
+    });
+
+    document.getElementById('sliderFov').addEventListener('input', e => {
+      visualParams.fov = parseInt(e.target.value, 10);
+      document.getElementById('valFov').textContent = visualParams.fov + '°';
+      camera.fov = visualParams.fov;
+      camera.updateProjectionMatrix();
+    });
+
+    document.getElementById('toggleWireframe').addEventListener('change', e => {
+      visualParams.wireframe = e.target.checked;
+      drums3D.forEach(d => {
+        d.mat.wireframe = visualParams.wireframe;
+      });
+    });
+
+    // Studio Audio Recording & .WAV / .MP3 Export
+    const btnRecord = document.getElementById('btnRecord');
+    const recLabel = document.getElementById('recLabel');
+    const btnOpenExports = document.getElementById('btnOpenExports');
+    const exportModal = document.getElementById('exportModal');
+    const audioPreview = document.getElementById('audioPreview');
+    const exportMeta = document.getElementById('exportMeta');
+    let recTimerInterval = null;
+
+    btnRecord.addEventListener('click', () => {
+      if (!sound.isRecording) {
+        sound.startRecording();
+        btnRecord.classList.add('recording');
+        recLabel.textContent = '0:00 ■ Stop';
+        exportModal.classList.add('hidden');
+
+        recTimerInterval = setInterval(() => {
+          const sec = Math.floor((performance.now() - sound.recStartTime) / 1000);
+          const m = Math.floor(sec / 60);
+          const s = String(sec % 60).padStart(2, '0');
+          recLabel.textContent = `${m}:${s} ■ Stop`;
+        }, 250);
+      } else {
+        clearInterval(recTimerInterval);
+        btnRecord.classList.remove('recording');
+        recLabel.textContent = 'Rec Audio';
+
+        const result = sound.stopRecording();
+        if (result && result.wavBlob) {
+          const url = URL.createObjectURL(result.wavBlob);
+          audioPreview.src = url;
+          exportMeta.textContent = `Captured ${result.durationSec}s stereo studio session (${(result.wavBlob.size / 1024).toFixed(0)} KB WAV).`;
+          exportModal.classList.remove('hidden');
+          btnOpenExports.classList.remove('hidden');
+        }
+      }
+    });
+
+    btnOpenExports.addEventListener('click', () => {
+      exportModal.classList.toggle('hidden');
+    });
+
+    document.getElementById('btnCloseExport').addEventListener('click', () => {
+      exportModal.classList.add('hidden');
+    });
+
+    function triggerBlobDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 400);
+    }
+
+    document.getElementById('btnDownloadWav').addEventListener('click', () => {
+      if (!sound.lastWavBlob) return;
+      triggerBlobDownload(sound.lastWavBlob, `kinetic-session-${Date.now()}.wav`);
+    });
+
+    document.getElementById('btnDownloadMp3').addEventListener('click', () => {
+      const statusEl = document.getElementById('mp3Status');
+      statusEl.textContent = '(Encoding...)';
+      setTimeout(() => {
+        const mp3Blob = sound.encodeMP3();
+        statusEl.textContent = '(192kbps)';
+        if (mp3Blob) {
+          triggerBlobDownload(mp3Blob, `kinetic-session-${Date.now()}.mp3`);
+        }
+      }, 30);
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      resizeStaffCanvas();
+    });
+
+    window.onload = function () {
+      resizeStaffCanvas();
+      build3DInstruments();
+      spawn3DMover(-3.5, 1.8, 0.17, 0.12);
+      spawn3DMover(4.2, 1.2, -0.16, -0.13);
+      animate();
+    };
+  </script>
+</body>
+</html>
